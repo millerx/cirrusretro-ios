@@ -38,4 +38,4 @@ The tests generate an original two-track NSF. The last command renders its lower
 
 The portable prototype handles raw NSF v1 with the base NES APU. The project license awaits owner approval. The dependency audit permits private builds and personal device use with the patched engine. Sharing a binary with a friend through TestFlight requires a separate licensing review. Upstream components retain their licenses and notices. Use music or ROMs only with appropriate rights.
 
-See the [Milestone 1 audit, design and test record](docs/milestone-1.md), [roadmap](ROADMAP.md) and [engineering instructions](AGENTS.md).
+See the [Milestone 1 audit, design and test record](docs/milestone-1.md), [roadmap](ROADMAP.md), [milestone workflow](docs/milestone-workflow.md) and [engineering instructions](AGENTS.md).

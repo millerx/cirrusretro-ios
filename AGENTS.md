@@ -36,6 +36,8 @@ If Astra is unavailable, use Sol at High for demanding work. Use the closest ava
 
 ## Autonomous milestone workflow
 
+See the [milestone runbook](docs/milestone-workflow.md) for supported handoffs and fallbacks.
+
 - Owner authorizes major milestones and retains final merge authority. Agents make routine engineering decisions independently; escalate significant blockers, security or licensing risks, material scope/architecture changes, unexpected costs and major opportunities.
 - GitHub PRs are the authoritative communication channel. Implementation owns changes; independent reviewer owns findings. Default sequence: implementation and tests, review pass 1, fixes, review pass 2, final fixes and CI. Anchor reviews to commit SHAs, classify findings, record dispositions and defer unrelated improvements. Additional review only for unresolved blockers or material high-risk changes. No automatic merge.
 - Keep reports concise and evidence-based. Prefer deterministic CI over redundant agent verification. Reuse implementation context for related fixes and independent review context for the second pass.
