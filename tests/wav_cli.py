@@ -9,6 +9,8 @@ import tempfile
 import unittest
 import wave
 
+from fixture import append_routine, fixture, scheduled_fixture, warning_fixture
+
 
 CLI, FIXTURE = map(Path, sys.argv[1:])
 REFERENCE = "8407fc4dea4d00151864e534abed6416772a160964762a0999703eda95d4dbdd"
@@ -79,6 +81,59 @@ class Converter(unittest.TestCase):
         banked = self.read_wave(1)
         self.convert("1", "1")
         self.assertEqual(banked, self.read_wave(1))
+
+    def test_program_length(self):
+        data = fixture()
+        data.extend(bytes(32768 - (len(data) - 128)))
+        source = self.root / "full.nsf"
+        source.write_bytes(data)
+        self.convert("1", "1", source=source)
+        expected = self.read_wave(1)
+        data[125:128] = (32768).to_bytes(3, "little")
+        for footer in (b"", b"optional metadata"):
+            source.write_bytes(data + footer)
+            self.convert("1", "1", source=source)
+            self.assertEqual(self.read_wave(1), expected)
+        data[125:128] = (32769).to_bytes(3, "little")
+        source.write_bytes(data)
+        self.convert(source=source, success=False)
+        self.assertFalse(self.output.exists())
+
+    def test_guest_routines_and_warning_cleanup(self):
+        source = self.root / "guest.nsf"
+        for entry in (10, 12):
+            with self.subTest(entry=entry):
+                data = fixture()
+                # A routine that waits forever in guest time (JMP to itself).
+                address = 0x8000 + len(data) - 128
+                append_routine(data, entry, b"\x4c" + struct.pack("<H", address))
+                source.write_bytes(data)
+                self.convert("1", "1", source=source)
+                self.read_wave(1)
+        source.write_bytes(warning_fixture())
+        self.convert("1", "2", source=source, success=False)
+        self.assertFalse(self.output.exists())
+        self.convert("1", "1", source=source)
+        self.check_tone(self.read_wave(1), 440, 1)
+
+    def test_periodic_play(self):
+        source = self.root / "scheduled.nsf"
+        for region, period, transition in [(0, 16639, 0.40), (1, 16639, 0.48),
+                                           (0, 25000, 0.60), (2, 16639, 0.40)]:
+            with self.subTest(region=region, period=period):
+                source.write_bytes(scheduled_fixture(region, period))
+                self.convert("1", "1", source=source)
+                samples = [left for left, _ in struct.iter_unpack("<hh", self.read_wave(1))]
+                # Count rising crossings in 20 ms windows. The low tone has
+                # 8–9 crossings, the high tone 16–18, including PAL pitches.
+                window = 882
+                high = []
+                for start in range(0, len(samples), window):
+                    part = samples[start:start + window]
+                    high.append(sum(a <= 0 < b for a, b in zip(part, part[1:])) >= 13)
+                change = high.index(True)
+                self.assertAlmostEqual(change * window / 44100, transition, delta=0.025)
+                self.assertTrue(all(high[change:]))
 
     def test_rejects_bad_input(self):
         data = FIXTURE.read_bytes()

@@ -36,11 +36,29 @@ int main(int argc, char **argv)
     CHECK(!cr_nsf_render(nsf, first, 1024));
     CHECK(!cr_nsf_select(nsf, 0));
     CHECK(!cr_nsf_render(nsf, replay, 511));
+    CHECK(cr_nsf_select(nsf, info.track_count)); /* preserve position */
     CHECK(!cr_nsf_render(nsf, replay + 1022, 513));
     CHECK(!memcmp(first, replay, sizeof first));
     CHECK(!cr_nsf_select(nsf, 1));
+    CHECK(cr_nsf_render(nsf, replay, 1024)); /* guest warning ends selection */
+    CHECK(cr_nsf_render(nsf, replay, 1024));
+    CHECK(!cr_nsf_select(nsf, 0));
     CHECK(!cr_nsf_render(nsf, replay, 1024));
-    CHECK(memcmp(first, replay, sizeof first));
+    CHECK(!memcmp(first, replay, sizeof first));
+    CHECK(!cr_nsf_select(nsf, 0));
+    int16_t block[CR_NSF_MAX_RENDER_FRAMES * CR_NSF_CHANNELS];
+    unsigned remaining = CR_NSF_MAX_TRACK_FRAMES;
+    while (remaining > CR_NSF_MAX_RENDER_FRAMES) {
+        CHECK(!cr_nsf_render(nsf, block, CR_NSF_MAX_RENDER_FRAMES));
+        remaining -= CR_NSF_MAX_RENDER_FRAMES;
+    }
+    CHECK(remaining < CR_NSF_MAX_RENDER_FRAMES);
+    CHECK(cr_nsf_render(nsf, block, remaining + 1));
+    CHECK(!cr_nsf_render(nsf, block, remaining));
+    CHECK(cr_nsf_render(nsf, block, 1));
+    CHECK(!cr_nsf_select(nsf, 0));
+    CHECK(!cr_nsf_render(nsf, replay, 1024));
+    CHECK(!memcmp(first, replay, sizeof first));
     cr_nsf_close(nsf);
     cr_nsf_close(NULL);
     return 0;

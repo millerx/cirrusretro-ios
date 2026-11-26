@@ -91,7 +91,7 @@ int main(int argc, char **argv)
 {
     unsigned seconds = 3, track = 0;
     if (argc < 3 || argc > 5 ||
-        (argc >= 4 && !positive_number(argv[3], 3600, &seconds)) ||
+        (argc >= 4 && !positive_number(argv[3], CR_NSF_MAX_TRACK_SECONDS, &seconds)) ||
         (argc == 5 && !positive_number(argv[4], 255, &track))) {
         fprintf(stderr, "Usage: nsf-to-wav INPUT.nsf NEW.wav [SECONDS 1..3600 [TRACK 1..255]]\n");
         return 2;

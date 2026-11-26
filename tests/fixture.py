@@ -36,5 +36,36 @@ def fixture():
     return header + program
 
 
+def append_routine(data, entry_offset, code):
+    """Redirect INIT (offset 10) or PLAY (12) to a new routine in the flat ROM."""
+    address = 0x8000 + len(data) - 128
+    struct.pack_into("<H", data, entry_offset, address)
+    data.extend(code)
+
+
+def warning_fixture():
+    data = fixture()
+    # Track 1 runs the original INIT. Track 2 executes a halt opcode that
+    # GME reports as an emulation warning during the first render.
+    append_routine(data, 10, bytes.fromhex("C9 00 F0 02 02 60 4C 00 80"))
+    return data
+
+
+def scheduled_fixture(region, period_us):
+    data = fixture()
+    data[122] = region
+    struct.pack_into("<H", data, 110, period_us)
+    struct.pack_into("<H", data, 120, 20000)
+    # Initialize the call counter in zero page before entering the tone INIT.
+    append_routine(data, 10, bytes.fromhex("A2 00 86 00 4C 00 80"))
+    append_routine(data, 12, bytes.fromhex(
+        "E6 00 A5 00 C9 18 "  # INC counter; LDA counter; CMP #24
+        "D0 05 A9 7E 8D 02 40 60"  # BNE done; update pulse timer; RTS
+    ))
+    return data
+
+
 if __name__ == "__main__":
     Path(sys.argv[1]).write_bytes(fixture())
+    if len(sys.argv) > 2:
+        Path(sys.argv[2]).write_bytes(warning_fixture())

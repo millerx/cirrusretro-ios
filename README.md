@@ -28,7 +28,7 @@ From the repository root on Linux, use CMake 3.20+, Git, a C11/C++ toolchain, a 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
-ctest --test-dir build --output-on-failure
+ctest --test-dir build --output-on-failure --no-tests=error
 build/nsf-to-wav build/pulse.nsf build/pulse.wav 3 1
 ```
 
@@ -36,6 +36,6 @@ The tests generate an original two-track NSF. The last command renders its lower
 
 ## Status and licensing
 
-The portable prototype handles raw NSF v1 with the base NES APU. The project license awaits owner approval. The dependency audit permits local development with the pinned engine. Binary distribution, including TestFlight and the App Store, requires a separate licensing review. Upstream components retain their licenses and notices. Use music or ROMs only with appropriate rights.
+The portable prototype handles raw NSF v1 with the base NES APU. The project license awaits owner approval. The dependency audit permits private builds and personal device use with the patched engine. Sharing a binary with a friend through TestFlight requires a separate licensing review. Upstream components retain their licenses and notices. Use music or ROMs only with appropriate rights.
 
 See the [Milestone 1 audit, design and test record](docs/milestone-1.md), [roadmap](ROADMAP.md) and [engineering instructions](AGENTS.md).

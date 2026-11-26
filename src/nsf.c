@@ -7,6 +7,7 @@ struct cr_nsf {
     Music_Emu *emu;
     cr_nsf_info info;
     int playing;
+    unsigned frames_left;
 };
 
 static unsigned little16(const uint8_t *p)
@@ -14,7 +15,7 @@ static unsigned little16(const uint8_t *p)
     return p[0] | ((unsigned)p[1] << 8);
 }
 
-static const char *validate(const uint8_t *b, size_t size)
+static const char *validate(const uint8_t *b, size_t size, size_t *engine_size)
 {
     if (!b || size <= 128 || size > CR_NSF_MAX_BYTES)
         return "NSF size outside supported range";
@@ -29,6 +30,12 @@ static const char *validate(const uint8_t *b, size_t size)
     if (load < 0x8000 || little16(b + 10) < 0x8000 || little16(b + 12) < 0x8000)
         return "expected ROM load, init and play addresses";
     size_t payload = size - 128;
+    size_t declared = little16(b + 125) | ((size_t)b[127] << 16);
+    if (declared > payload)
+        return "declared program length exceeds input";
+    if (declared)
+        payload = declared;
+    *engine_size = 128 + payload;
     const uint8_t flat_banks[8] = {0};
     if (memcmp(b + 112, flat_banks, 8) == 0) {
         if (payload > 0x10000u - load)
@@ -44,13 +51,14 @@ const char *cr_nsf_open(const uint8_t *bytes, size_t size, cr_nsf **out)
     if (!out)
         return "missing output handle";
     *out = NULL;
-    const char *error = validate(bytes, size);
+    size_t engine_size;
+    const char *error = validate(bytes, size, &engine_size);
     if (error)
         return error;
     cr_nsf *nsf = calloc(1, sizeof *nsf);
     if (!nsf)
         return "out of memory";
-    if (gme_open_data(bytes, (long)size, &nsf->emu, CR_NSF_RATE)) {
+    if (gme_open_data(bytes, (long)engine_size, &nsf->emu, CR_NSF_RATE)) {
         free(nsf);
         return "engine could not load NSF";
     }
@@ -77,6 +85,7 @@ const char *cr_nsf_select(cr_nsf *nsf, unsigned track)
     if (!nsf || track >= nsf->info.track_count)
         return "track outside NSF track range";
     nsf->playing = !gme_start_track(nsf->emu, (int)track) && !gme_warning(nsf->emu);
+    nsf->frames_left = CR_NSF_MAX_TRACK_FRAMES;
     return nsf->playing ? NULL : "engine could not start track";
 }
 
@@ -86,10 +95,13 @@ const char *cr_nsf_render(cr_nsf *nsf, int16_t *pcm, size_t frames)
         return "select a track before rendering";
     if (!pcm || !frames || frames > CR_NSF_MAX_RENDER_FRAMES)
         return "invalid PCM buffer or frame count";
+    if (frames > nsf->frames_left)
+        return "render exceeds one hour per track selection";
     if (gme_play(nsf->emu, (int)frames * CR_NSF_CHANNELS, pcm) || gme_warning(nsf->emu)) {
         nsf->playing = 0;
         return "engine error during playback";
     }
+    nsf->frames_left -= (unsigned)frames;
     return NULL;
 }
 
