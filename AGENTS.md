@@ -1,5 +1,9 @@
 # Engineering instructions for agents
 
+## Product and distribution objectives
+
+The primary objective is personal installation and ongoing use on the owner's iPhone and iPad. Limited sharing with a friend through TestFlight is optional. Public App Store release and monetization are out of scope. Prefer a sustainable remote signing and installation workflow; account for provisioning and beta expiration. Public source visibility does not waive dependency licenses; review obligations for any binary sharing, including TestFlight.
+
 ## Scope and architecture
 - Target native iPhone and iPad only. Use SwiftUI for the application, portable C/C++ for emulation, and a narrow C-compatible API with opaque handles, explicit ownership and documented error handling.
 - Prefer proven upstream emulator implementations over rewriting sound chips. Audit actual dependencies and licenses before incorporating code; pin upstream revisions and retain notices.
