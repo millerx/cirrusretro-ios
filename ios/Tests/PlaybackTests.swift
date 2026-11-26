@@ -74,6 +74,25 @@ final class PlaybackTests: XCTestCase {
         }
     }
 
+    func testGuestWorkLimitOnARM64() throws {
+        var data = try fixture()
+        data[110] = 1 // One microsecond NTSC play period.
+        data[111] = 0
+        var handle: OpaquePointer?
+        defer { cr_nsf_close(handle) }
+        let error = data.withUnsafeBytes {
+            cr_nsf_open($0.bindMemory(to: UInt8.self).baseAddress, $0.count, &handle)
+        }
+        XCTAssertNil(error)
+        XCTAssertNil(cr_nsf_select(handle, 0))
+        var pcm = [Int16](repeating: 0, count: Int(CR_BLOCK_FRAMES * CR_NSF_CHANNELS))
+        let start = DispatchTime.now().uptimeNanoseconds
+        XCTAssertNotNil(cr_nsf_render(handle, &pcm, Int(CR_BLOCK_FRAMES)))
+        let elapsed = DispatchTime.now().uptimeNanoseconds - start
+        print("Guest work-limit rejection in \(Double(elapsed) / 1_000_000) ms")
+        XCTAssertLessThan(elapsed, 1_000_000_000)
+    }
+
     func testFileSizeLimit() throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: file) }

@@ -27,8 +27,12 @@ jobs:
         run: |
           udid=$(xcrun simctl list devices available -j | python3 -c '
           import json, sys
+          import subprocess
+          sdk = subprocess.check_output(["xcrun", "--sdk", "iphonesimulator", "--show-sdk-version"], text=True).strip()
+          preferred = "com.apple.CoreSimulator.SimRuntime.iOS-" + sdk.replace(".", "-")
           devices = json.load(sys.stdin)["devices"]
-          print(next(d["udid"] for runtime, entries in reversed(sorted(devices.items()))
-                     if ".iOS-" in runtime for d in entries if d["name"].startswith("iPhone")))')
+          runtimes = sorted(devices, key=lambda r: (r == preferred, r), reverse=True)
+          print(next(d["udid"] for runtime in runtimes
+                     if ".iOS-" in runtime for d in devices[runtime] if d["name"].startswith("iPhone")))')
           xcodebuild -project ios/CirrusRetro.xcodeproj -scheme CirrusRetro -configuration Debug \
-            -destination "platform=iOS Simulator,id=$udid" -parallel-testing-enabled NO test
+            -destination "platform=iOS Simulator,id=$udid,arch=arm64" -parallel-testing-enabled NO test

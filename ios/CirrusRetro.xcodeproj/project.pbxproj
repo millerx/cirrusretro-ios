@@ -116,6 +116,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				SDKROOT = iphoneos;
+				ARCHS = arm64;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				CLANG_ENABLE_MODULES = YES;
@@ -137,6 +138,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				SDKROOT = iphoneos;
+				ARCHS = arm64;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				CLANG_ENABLE_MODULES = YES;
@@ -169,7 +171,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 			};
 			name = Debug;
 		};
@@ -184,7 +186,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 			};
 			name = Release;
 		};
