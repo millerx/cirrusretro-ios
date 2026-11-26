@@ -1,5 +1,7 @@
 # Roadmap
 
+The primary objective is personal installation and ongoing use on the owner's iPhone and iPad. Limited sharing with a friend through TestFlight is optional. Public App Store release and monetization are out of scope. Prefer a sustainable remote signing and installation workflow; account for provisioning and beta expiration. Public source visibility does not waive dependency licenses; review obligations for any binary sharing, including TestFlight.
+
 ## 1. Feasibility and portable NSF prototype (current)
 - Audit upstream engines, dependency versions, licenses and native portability; document potential distribution constraints.
 - Define a small C API for loading, metadata, track selection, rendering PCM and cleanup.
@@ -19,6 +21,6 @@
 - Acceptance: offline playback, stable background behavior and device testing on iPhone and iPad.
 
 ## 4. Beta and expansion
-- Configure signing and TestFlight via hosted macOS CI; evaluate battery, memory, audio fidelity and accessibility.
-- Review licensing, attribution and naming before public distribution.
+- Establish sustainable personal installation and signing via hosted macOS CI; optionally configure limited TestFlight sharing after licensing review. Evaluate battery, memory, audio fidelity and accessibility.
+- Review licensing, attribution and naming before any external binary sharing; public App Store release is not planned.
 - Consider additional formats, playlists, channel controls and visualizations after MVP stability.
