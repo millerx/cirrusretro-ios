@@ -29,7 +29,8 @@ security import "$temp/distribution.p12" -k "$keychain" -f pkcs12 \
   -P "$DISTRIBUTION_P12_PASSWORD" -T /usr/bin/codesign
 unset DISTRIBUTION_P12_PASSWORD
 security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$keychain" >/dev/null
-security list-keychains -d user -s "$keychain"
+# Keep the runner's login keychain available for Xcode's Apple WWDR intermediate.
+security list-keychains -d user -s "$keychain" "$HOME/Library/Keychains/login.keychain-db"
 security cms -D -i "$temp/app.mobileprovision" -o "$temp/profile.plist"
 
 # App Store profiles contain a single signing certificate. Pin its SHA-1
