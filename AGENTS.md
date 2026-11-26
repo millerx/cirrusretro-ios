@@ -34,5 +34,11 @@ Use the lightest available model and effort that reliably meets the task's quali
 
 If Astra is unavailable, use Sol at High for demanding work. Use the closest available equivalent if named models are unavailable. Escalate after repeated failed attempts or when evidence reveals a high-risk design issue; do not spend repeated expensive runs on an unchanged hypothesis. De-escalate for bounded follow-up work. Prefer a fresh review session for major changes. Record model/effort if known, tests and remaining risks in milestone PRs. These instructions guide the operator's model selection; agents must not assume they can change their own model or authorize extra spending. Ask the owner to select a stronger model if needed. Revisit guidance as models change: https://developers.openai.com/api/docs/guides/model-selection
 
-## First task
-Audit https://github.com/multimediamike/cirrusretro-players and its actual dependencies, identify a viable NSF engine, propose the C API and implement a portable NSF-to-WAV CLI with automated tests and reproducible build instructions. Document native ARM64 iOS feasibility and unresolved risks. Do not implement SwiftUI yet. If licensing is unclear, stop before importing the affected code and report the blocker.
+## Autonomous milestone workflow
+
+- Owner authorizes major milestones and retains final merge authority. Agents make routine engineering decisions independently; escalate significant blockers, security or licensing risks, material scope/architecture changes, unexpected costs and major opportunities.
+- GitHub PRs are the authoritative communication channel. Implementation owns changes; independent reviewer owns findings. Default sequence: implementation and tests, review pass 1, fixes, review pass 2, final fixes and CI. Anchor reviews to commit SHAs, classify findings, record dispositions and defer unrelated improvements. Additional review only for unresolved blockers or material high-risk changes. No automatic merge.
+- Keep reports concise and evidence-based. Prefer deterministic CI over redundant agent verification. Reuse implementation context for related fixes and independent review context for the second pass.
+- Hard AI budget: owner's existing $100/month ChatGPT subscription. No paid API usage, extra credits, upgrades or new paid services without explicit approval. On quota exhaustion, preserve progress and wait for reset; do not bypass limits. Prefer economical models and bounded attempts.
+- Automate handoffs only through supported, verified capabilities; never assume a cloud session can be resumed programmatically. Keep credentials out of public repositories and untrusted PR workflows.
+
