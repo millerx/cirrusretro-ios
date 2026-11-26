@@ -7,14 +7,14 @@ out="$root/ios/Generated"
 mkdir -p "$out"
 for sdk in iphoneos iphonesimulator; do
   build="$out/$sdk"
-  args=()
+  args=(-DBUILD_TESTING=OFF)
   if [[ "$sdk" == iphonesimulator ]]; then
     args+=("-DFETCHCONTENT_SOURCE_DIR_GAME_MUSIC_EMU=$out/iphoneos/_deps/game_music_emu-src")
   fi
   cmake -S . -B "$build" -G 'Unix Makefiles' -DCMAKE_SYSTEM_NAME=iOS \
     -DCMAKE_OSX_SYSROOT="$(xcrun --sdk "$sdk" --show-sdk-path)" \
     -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
-    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF "${args[@]}"
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release "${args[@]}"
   cmake --build "$build" --target cirrus_nsf --parallel 3
   xcrun libtool -static -o "$build/libCirrusNSF.a" "$build/libcirrus_nsf.a" \
     "$build/_deps/game_music_emu-build/gme/libgme.a"
