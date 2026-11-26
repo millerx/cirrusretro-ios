@@ -21,8 +21,21 @@ Native SwiftUI for iPhone and iPad; portable C/C++ emulation behind a C API; AVA
 
 Development is intended to use Codex Cloud, GitHub and hosted macOS CI, preferably Xcode Cloud for distribution. No backend is planned.
 
+## Render the Milestone 1 prototype
+
+From the repository root on Linux, use CMake 3.20+, Git, a C11/C++ toolchain, a CMake build tool and Python 3.8+ for the tests. The first configure fetches a pinned Game Music Emu revision. Rendering runs offline. In the published Linux environment, activate the existing tools with `source /workspace/.cirrusretro-toolchain/bin/activate` if CMake is outside your PATH.
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure --no-tests=error
+build/nsf-to-wav build/pulse.nsf build/pulse.wav 3 1
+```
+
+The tests generate an original two-track NSF. The last command renders its lower pulse tone to a new stereo WAV. For another input, use `nsf-to-wav INPUT.nsf NEW.wav [SECONDS [TRACK]]`. Duration defaults to three seconds (range 1–3600). Tracks are numbered from one on the CLI and default to the file's starting track. Use a fresh output path each time.
+
 ## Status and licensing
 
-Planning stage; no working player yet. The first milestone is a portable NSF-to-WAV proof of concept. See [ROADMAP.md](ROADMAP.md) and [AGENTS.md](AGENTS.md).
+The portable prototype handles raw NSF v1 with the base NES APU. The project license awaits owner approval. The dependency audit permits private builds and personal device use with the patched engine. Sharing a binary with a friend through TestFlight requires a separate licensing review. Upstream components retain their licenses and notices. Use music or ROMs only with appropriate rights.
 
-Project licensing is pending a dependency audit. Public visibility does not grant a general license to reuse original project code. Upstream components retain their respective licenses and notices. Do not distribute copyrighted music or ROMs without authorization.
+See the [Milestone 1 audit, design and test record](docs/milestone-1.md), [roadmap](ROADMAP.md) and [engineering instructions](AGENTS.md).
