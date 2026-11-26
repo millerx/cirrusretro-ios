@@ -25,7 +25,8 @@ typedef struct {
 } cr_nsf_info;
 
 /* NULL means success. Errors are static strings. Serialize all calls on one
-   handle (including close) on its owning worker thread. No real-time guarantee.
+   handle (including close) on one worker or serial queue. Calls have no
+   physical-thread affinity and provide no real-time guarantee.
    Open consumes raw NSF v1 bytes synchronously. On success the caller owns
    *out and can release the bytes. On error *out is NULL. */
 const char *cr_nsf_open(const uint8_t *bytes, size_t size, cr_nsf **out);

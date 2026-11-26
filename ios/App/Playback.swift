@@ -27,8 +27,8 @@ final class Playback {
     private var handle: OpaquePointer?
     private var output: CRAudioOutput?
     private var timer: DispatchSourceTimer?
-    private var pcm = [Int16](repeating: 0, count: 512 * 2)
-    private var remaining = 0
+    private var pcm = [Int16](repeating: 0, count: Int(CR_BLOCK_FRAMES * CR_NSF_CHANNELS))
+    private(set) var remaining = 0
     var notify: ((PlaybackState) -> Void)?
 
     // Preserve the current selection/output if a replacement fails validation or saving.
@@ -98,7 +98,7 @@ final class Playback {
     }
 
     private func produce(into output: CRAudioOutput) throws {
-        let frames = min(512, remaining)
+        let frames = min(Int(CR_BLOCK_FRAMES), remaining)
         guard frames > 0, output.freeFrames >= frames else { return }
         try check(cr_nsf_render(handle, &pcm, frames))
         pcm.withUnsafeBufferPointer { output.write($0.baseAddress!, frames: UInt32(frames)) }
@@ -138,7 +138,7 @@ final class Playback {
     private func tick() {
         guard state.transport == .playing, let output else { return }
         do {
-            if remaining == 0 && output.freeFrames == 2048 {
+            if remaining == 0 && output.freeFrames == Int(CR_QUEUE_FRAMES) {
                 stop()
             } else if !output.engine.isRunning {
                 throw PlayerFailure("Audio output stopped. Press Play to restart.")
