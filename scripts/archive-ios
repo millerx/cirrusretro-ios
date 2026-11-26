@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Identical credential-free archive for PR verification and TestFlight export.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+archive=${1:?usage: archive-ios ARCHIVE_PATH BUILD_NUMBER}
+build_number=${2:?missing build number}
+sdk=$(xcrun --sdk iphoneos --show-sdk-version)
+if (( ${sdk%%.*} < 26 )); then
+  echo "App Store Connect requires the iOS 26 SDK or newer" >&2
+  exit 1
+fi
+# Refuse a toolchain that cannot restrict the binary to internal TestFlight.
+help=$(xcodebuild -help 2>&1)
+grep -q 'testFlightInternalTestingOnly' <<< "$help" || {
+  echo "Xcode does not advertise internal-only TestFlight export" >&2
+  exit 1
+}
+xcodebuild -project ios/CirrusRetro.xcodeproj -scheme CirrusRetro \
+  -configuration Release -destination 'generic/platform=iOS' \
+  -archivePath "$archive" CODE_SIGNING_ALLOWED=NO CURRENT_PROJECT_VERSION="$build_number" archive
+app="$archive/Products/Applications/CirrusRetro.app"
+plist="$app/Info.plist"
+test "$(plutil -extract CFBundleIdentifier raw "$plist")" = org.cirrusretro.player
+test "$(plutil -extract CFBundleVersion raw "$plist")" = "$build_number"
+test "$(plutil -extract CFBundleIcons.CFBundlePrimaryIcon.CFBundleIconName raw "$plist")" = AppIcon
+test -s "$app/Assets.car"

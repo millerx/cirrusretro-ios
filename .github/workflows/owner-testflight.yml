@@ -1,0 +1,54 @@
+name: Owner TestFlight
+on:
+  push:
+    tags: ['owner-testflight-*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: owner-testflight
+  cancel-in-progress: false
+
+jobs:
+  deliver:
+    if: github.repository == 'millerx/cirrusretro-ios' && github.event.repository.private == false
+    runs-on: macos-26
+    timeout-minutes: 35
+    environment: owner-testflight
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - run: scripts/build-ios-core
+      - run: scripts/archive-ios "$RUNNER_TEMP/CirrusRetro.xcarchive" "$GITHUB_RUN_NUMBER"
+      - name: Cloud-sign and upload for internal testing only
+        env:
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+          ASC_ISSUER_ID: ${{ vars.ASC_ISSUER_ID }}
+          ASC_KEY_ID: ${{ vars.ASC_KEY_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          set -eu
+          : "${APPLE_TEAM_ID:?Missing environment variable APPLE_TEAM_ID}"
+          : "${ASC_ISSUER_ID:?Missing environment variable ASC_ISSUER_ID}"
+          : "${ASC_KEY_ID:?Missing environment variable ASC_KEY_ID}"
+          : "${ASC_PRIVATE_KEY:?Missing environment secret ASC_PRIVATE_KEY}"
+          umask 077
+          temp=$(mktemp -d "$RUNNER_TEMP/testflight.XXXXXX")
+          trap 'rm -rf "$temp"' EXIT
+          key="$temp/AuthKey.p8"
+          printf '%s\n' "$ASC_PRIVATE_KEY" > "$key"
+          unset ASC_PRIVATE_KEY
+          options="$temp/ExportOptions.plist"
+          plutil -create xml1 "$options"
+          plutil -insert method -string app-store-connect "$options"
+          plutil -insert destination -string upload "$options"
+          plutil -insert signingStyle -string automatic "$options"
+          plutil -insert teamID -string "$APPLE_TEAM_ID" "$options"
+          plutil -insert testFlightInternalTestingOnly -bool YES "$options"
+          plutil -insert manageAppVersionAndBuildNumber -bool NO "$options"
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/CirrusRetro.xcarchive" \
+            -exportPath "$temp/export" -exportOptionsPlist "$options" \
+            -allowProvisioningUpdates -authenticationKeyPath "$key" \
+            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"

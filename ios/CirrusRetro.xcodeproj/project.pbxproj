@@ -4,6 +4,16 @@
 	classes = {};
 	objectVersion = 56;
 	objects = {
+		A61C4A5B99EB4F2192D0B401 /* Assets.xcassets */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = folder.assetcatalog;
+			path = Assets.xcassets;
+			sourceTree = "<group>";
+		};
+		A61C4A5B99EB4F2192D0B402 /* Assets.xcassets in Resources */ = {
+			isa = PBXBuildFile;
+			fileRef = A61C4A5B99EB4F2192D0B401;
+		};
 		97F6D9676F887ABB69EDD1EA /* AudioOutput.h */ = {
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.c.h;
@@ -54,7 +64,7 @@
 		};
 		3A2A88DEEFF3D1D23E496597 /* appgroup */ = {
 			isa = PBXGroup;
-			children = (97F6D9676F887ABB69EDD1EA, DC5D74846709683B71E61EE2, BDC2DE4383EF1F912EFC263B, 9929B81DEC60A8846B4C862F, 7388A78C4268B8DEE341150F, C1F4A0F80D52AE60435B5CCD, 13B1074B56856AB38AB3B223, D997E5A860D4DEDC7E943745);
+			children = (A61C4A5B99EB4F2192D0B401, 97F6D9676F887ABB69EDD1EA, DC5D74846709683B71E61EE2, BDC2DE4383EF1F912EFC263B, 9929B81DEC60A8846B4C862F, 7388A78C4268B8DEE341150F, C1F4A0F80D52AE60435B5CCD, 13B1074B56856AB38AB3B223, D997E5A860D4DEDC7E943745);
 			path = App;
 			sourceTree = "<group>";
 		};
@@ -164,6 +174,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_BUNDLE_IDENTIFIER = org.cirrusretro.player;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				SWIFT_OBJC_BRIDGING_HEADER = "App/Bridge.h";
 				OTHER_LDFLAGS = ("$(inherited)", "-lCirrusNSF", "-lc++");
 				LIBRARY_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/Generated/$(PLATFORM_NAME)");
@@ -179,6 +190,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_BUNDLE_IDENTIFIER = org.cirrusretro.player;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				SWIFT_OBJC_BRIDGING_HEADER = "App/Bridge.h";
 				OTHER_LDFLAGS = ("$(inherited)", "-lCirrusNSF", "-lc++");
 				LIBRARY_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/Generated/$(PLATFORM_NAME)");
@@ -269,7 +281,7 @@
 		E59CB254BF339590A3141DFF /* CirrusRetroRes */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
-			files = ();
+			files = (A61C4A5B99EB4F2192D0B402);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		CFABE60C682A64C2A07855DA /* CirrusRetro */ = {
