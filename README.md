@@ -11,6 +11,10 @@ This project honors Multimedia Mike and the original Cirrus Retro project. It is
 - [Things I Have Learned About Emscripten](https://multimedia.cx/eggs/things-i-have-learned-about-emscripten/)
 - [Multimedia Mike](https://github.com/multimediamike)
 
+## Distribution objectives
+
+The primary objective is personal installation and ongoing use on the owner's iPhone and iPad. Limited sharing with a friend through TestFlight is optional. Public App Store release and monetization are out of scope. Prefer a sustainable remote signing and installation workflow; account for provisioning and beta expiration. Public source visibility does not waive dependency licenses; review obligations for any binary sharing, including TestFlight.
+
 ## Direction
 
 Native SwiftUI for iPhone and iPad; portable C/C++ emulation behind a C API; AVAudioEngine playback; offline file import and library; eventual background playback and system media controls. Initial target: NSF, followed by SPC and VGM subject to feasibility and licensing.
