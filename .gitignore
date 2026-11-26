@@ -1,2 +1,5 @@
 /build*/
 /tests/__pycache__/
+/ios/Generated/
+/ios/DerivedData/
+xcuserdata/

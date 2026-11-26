@@ -10,6 +10,12 @@ file(READ "${nsf_source}" nsf_code)
 string(REPLACE "apu_names.resize( count_total );"
   "/* Cirrus Retro, 2026-11-26: propagate allocation failure. */\n\tRETURN_ERR( apu_names.resize( count_total ) );"
   nsf_code "${nsf_code}")
+# GME runs guest code in ~50 ms emulated quanta even for a small PCM request.
+# Bound dispatches (including very short/custom play periods and bad opcodes).
+# Each CPU dispatch already has a 32767 guest-clock limit in this pinned file.
+string(REPLACE "while ( time() < duration )\n\t{"
+  "unsigned dispatches = 0;\n\twhile ( time() < duration )\n\t{\n\t\t/* Cirrus Retro: bound untrusted CPU dispatch per audio quantum. */\n\t\tif ( ++dispatches > 8192 ) return \"NSF guest work limit\";"
+  nsf_code "${nsf_code}")
 set(patched_nsf "${CMAKE_CURRENT_BINARY_DIR}/patched-gme/Nsf_Emu.cpp")
 file(CONFIGURE OUTPUT "${patched_nsf}" CONTENT "${nsf_code}" @ONLY)
 foreach(target gme_shared gme_static)
