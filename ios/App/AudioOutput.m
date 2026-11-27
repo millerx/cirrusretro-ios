@@ -1,6 +1,6 @@
 #import "AudioOutput.h"
 #import "PCMQueue.h"
-#import "cirrus_nsf.h"
+#import "cirrus_music.h"
 
 @interface CRSampleStorage : NSObject {
 @public
@@ -20,7 +20,7 @@
         cr_queue_init(&storage->queue);
         _storage = storage;
         _engine = [AVAudioEngine new];
-        AVAudioFormat *format = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:CR_NSF_RATE channels:2];
+        AVAudioFormat *format = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:CR_MUSIC_RATE channels:CR_MUSIC_CHANNELS];
         // The block retains storage at construction. Direct ivar access in the
         // render body emits no Objective-C messaging or ARC ownership traffic.
         AVAudioSourceNode *source = [[AVAudioSourceNode alloc] initWithFormat:format

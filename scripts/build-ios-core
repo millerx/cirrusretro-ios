@@ -20,3 +20,4 @@ for sdk in iphoneos iphonesimulator; do
     "$build/_deps/game_music_emu-build/gme/libgme.a"
 done
 python3 tests/fixture.py "$out/pulse.nsf" "$out/warning.nsf"
+python3 tests/format_fixtures.py "$out"

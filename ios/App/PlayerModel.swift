@@ -1,21 +1,21 @@
 import Foundation
 import Combine
 
-enum NSFImport {
+enum MusicImport {
     static func read(_ url: URL) throws -> Data {
         guard try url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true else {
-            throw PlayerFailure("Choose a regular NSF file")
+            throw PlayerFailure("Choose a regular music file")
         }
         let file = try FileHandle(forReadingFrom: url)
         defer { try? file.close() }
-        let limit = Int(CR_NSF_MAX_BYTES)
+        let limit = Int(CR_MUSIC_MAX_BYTES)
         var data = Data()
         while data.count <= limit {
             let size = min(65536, limit + 1 - data.count)
             guard let chunk = try file.read(upToCount: size), !chunk.isEmpty else { return data }
             data.append(chunk)
         }
-        throw PlayerFailure("This file exceeds the NSF size limit")
+        throw PlayerFailure("This file exceeds the 8 MiB import limit")
     }
 
     static func fromFiles(_ url: URL) throws -> Data {
@@ -38,6 +38,7 @@ final class PlayerModel: ObservableObject {
     @Published private(set) var importing = false
     @Published var message: String?
     private let playback = Playback()
+    // Preserve the existing offline slot across upgrades. Its contents identify the format.
     private let saved = FileManager.default.urls(for: .applicationSupportDirectory,
                                                   in: .userDomainMask)[0].appendingPathComponent("current.nsf")
 
@@ -50,7 +51,7 @@ final class PlayerModel: ObservableObject {
         }
         perform { [saved] player in
             if FileManager.default.fileExists(atPath: saved.path) {
-                try player.load(NSFImport.read(saved))
+                try player.load(MusicImport.read(saved))
             }
         }
     }
@@ -83,7 +84,7 @@ final class PlayerModel: ObservableObject {
             defer { importing = false }
             do {
                 let data = try await Task.detached(priority: .userInitiated) {
-                    try NSFImport.fromFiles(url)
+                    try MusicImport.fromFiles(url)
                 }.value
                 perform { [saved] in try $0.load(data, saveTo: saved) }
             } catch { message = error.localizedDescription }

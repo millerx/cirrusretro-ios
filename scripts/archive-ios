@@ -24,3 +24,4 @@ test "$(plutil -extract CFBundleIdentifier raw "$plist")" = org.cirrusretro.play
 test "$(plutil -extract CFBundleVersion raw "$plist")" = "$build_number"
 test "$(plutil -extract CFBundleIcons.CFBundlePrimaryIcon.CFBundleIconName raw "$plist")" = AppIcon
 test -s "$app/Assets.car"
+test "$(plutil -extract MinimumOSVersion raw "$plist")" = 16.0

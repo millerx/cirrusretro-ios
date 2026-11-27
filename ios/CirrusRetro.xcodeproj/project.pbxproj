@@ -4,6 +4,26 @@
 	classes = {};
 	objectVersion = 56;
 	objects = {
+		BAA3A0000000000000000001 /* pulse.vgm */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = file;
+			path = pulse.vgm;
+			sourceTree = "<group>";
+		};
+		BAA3B0000000000000000001 /* pulse.vgm in Resources */ = {
+			isa = PBXBuildFile;
+			fileRef = BAA3A0000000000000000001;
+		};
+		BAA3A0000000000000000000 /* pulse.spc */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = file;
+			path = pulse.spc;
+			sourceTree = "<group>";
+		};
+		BAA3B0000000000000000000 /* pulse.spc in Resources */ = {
+			isa = PBXBuildFile;
+			fileRef = BAA3A0000000000000000000;
+		};
 		A61C4A5B99EB4F2192D0B401 /* Assets.xcassets */ = {
 			isa = PBXFileReference;
 			lastKnownFileType = folder.assetcatalog;
@@ -94,7 +114,7 @@
 		};
 		67BD5810EC8162548419905B /* generated */ = {
 			isa = PBXGroup;
-			children = (97A2F46ADAF44EBC361837C2, CA4B2DF6C0632AD67AC8B966);
+			children = (97A2F46ADAF44EBC361837C2, BAA3A0000000000000000001, BAA3A0000000000000000000, CA4B2DF6C0632AD67AC8B966);
 			path = Generated;
 			sourceTree = "<group>";
 		};
@@ -322,7 +342,7 @@
 		8C359BCB8371E2D8E8134722 /* CirrusRetroTestsRes */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
-			files = (C0B9D7714849C8CEC4082A6D, 621399DE14947F5D8F83B51E);
+			files = (C0B9D7714849C8CEC4082A6D, BAA3B0000000000000000001, BAA3B0000000000000000000, 621399DE14947F5D8F83B51E);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		9259F256A53C4A96BAF33159 /* CirrusRetroTests */ = {
