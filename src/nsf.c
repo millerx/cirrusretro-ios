@@ -1,5 +1,6 @@
 #include "cirrus_music.h"
 #include "cirrus_nsf.h"
+#include "vgm.h"
 #include <gme/gme.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,7 +56,7 @@ const char *cr_music_open(const uint8_t *bytes, size_t size, cr_music **out)
     if (!bytes || size < 4 || size > CR_MUSIC_MAX_BYTES)
         return "music file size outside supported range";
 
-    cr_music_info info = {0};
+    cr_music_info info = {.frame_limit = CR_MUSIC_MAX_TRACK_FRAMES};
     size_t engine_size = size;
     if (memcmp(bytes, "NESM", 4) == 0) {
         const char *error = validate_nsf(bytes, size, &engine_size);
@@ -84,6 +85,12 @@ const char *cr_music_open(const uint8_t *bytes, size_t size, cr_music **out)
                             (bytes[0xb0] >= '0' && bytes[0xb0] <= '9') ? 0xb1 : 0xb0;
             memcpy(info.artist, bytes + artist, 32);
         }
+    } else if (memcmp(bytes, "Vgm ", 4) == 0) {
+        const char *error = cr_validate_vgm(bytes, size, &info);
+        if (error)
+            return error;
+        info.format = CR_FORMAT_VGM;
+        info.track_count = 1;
     } else {
         return "unsupported music file signature";
     }
@@ -97,6 +104,16 @@ const char *cr_music_open(const uint8_t *bytes, size_t size, cr_music **out)
     }
     gme_ignore_silence(music->emu, 1);
     gme_set_autoload_playback_limit(music->emu, 0);
+    if (info.format == CR_FORMAT_VGM && memcmp(bytes + 0x14, "\0\0\0\0", 4)) {
+        gme_info_t *tag = NULL;
+        if (gme_track_info(music->emu, &tag, 0)) {
+            cr_music_close(music);
+            return "engine could not read VGM metadata";
+        }
+        strncpy(info.title, tag->song, sizeof info.title - 1);
+        strncpy(info.artist, tag->author, sizeof info.artist - 1);
+        gme_free_info(tag);
+    }
     music->info = info;
     *out = music;
     return NULL;
@@ -115,7 +132,7 @@ const char *cr_music_select(cr_music *music, unsigned track)
     if (!music || track >= music->info.track_count)
         return "track outside track range";
     music->playing = !gme_start_track(music->emu, (int)track) && !gme_warning(music->emu);
-    music->frames_left = CR_MUSIC_MAX_TRACK_FRAMES;
+    music->frames_left = music->info.frame_limit;
     return music->playing ? NULL : "engine could not start track";
 }
 
@@ -126,7 +143,7 @@ const char *cr_music_render(cr_music *music, int16_t *pcm, size_t frames)
     if (!pcm || !frames || frames > CR_MUSIC_MAX_RENDER_FRAMES)
         return "invalid PCM buffer or frame count";
     if (frames > music->frames_left)
-        return "render exceeds one hour per track selection";
+        return "render exceeds remaining track duration";
     if (gme_play(music->emu, (int)frames * CR_MUSIC_CHANNELS, pcm) || gme_warning(music->emu)) {
         music->playing = 0;
         return "engine error during playback";
