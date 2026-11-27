@@ -1,0 +1,362 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+		A61C4A5B99EB4F2192D0B401 /* Assets.xcassets */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = folder.assetcatalog;
+			path = Assets.xcassets;
+			sourceTree = "<group>";
+		};
+		A61C4A5B99EB4F2192D0B402 /* Assets.xcassets in Resources */ = {
+			isa = PBXBuildFile;
+			fileRef = A61C4A5B99EB4F2192D0B401;
+		};
+		97F6D9676F887ABB69EDD1EA /* AudioOutput.h */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = AudioOutput.h;
+			sourceTree = "<group>";
+		};
+		DC5D74846709683B71E61EE2 /* AudioOutput.m */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.objc;
+			path = AudioOutput.m;
+			sourceTree = "<group>";
+		};
+		BDC2DE4383EF1F912EFC263B /* Bridge.h */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = Bridge.h;
+			sourceTree = "<group>";
+		};
+		9929B81DEC60A8846B4C862F /* CirrusRetro.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = CirrusRetro.swift;
+			sourceTree = "<group>";
+		};
+		7388A78C4268B8DEE341150F /* PCMQueue.c */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			path = PCMQueue.c;
+			sourceTree = "<group>";
+		};
+		C1F4A0F80D52AE60435B5CCD /* PCMQueue.h */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = PCMQueue.h;
+			sourceTree = "<group>";
+		};
+		13B1074B56856AB38AB3B223 /* Playback.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = Playback.swift;
+			sourceTree = "<group>";
+		};
+		D997E5A860D4DEDC7E943745 /* PlayerModel.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = PlayerModel.swift;
+			sourceTree = "<group>";
+		};
+		3A2A88DEEFF3D1D23E496597 /* appgroup */ = {
+			isa = PBXGroup;
+			children = (A61C4A5B99EB4F2192D0B401, 97F6D9676F887ABB69EDD1EA, DC5D74846709683B71E61EE2, BDC2DE4383EF1F912EFC263B, 9929B81DEC60A8846B4C862F, 7388A78C4268B8DEE341150F, C1F4A0F80D52AE60435B5CCD, 13B1074B56856AB38AB3B223, D997E5A860D4DEDC7E943745);
+			path = App;
+			sourceTree = "<group>";
+		};
+		F5A84DD2D96DFDC4BAA8A06F /* PlaybackTests.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = PlaybackTests.swift;
+			sourceTree = "<group>";
+		};
+		8B7A6DECC0651D269EA794C7 /* testgroup */ = {
+			isa = PBXGroup;
+			children = (F5A84DD2D96DFDC4BAA8A06F);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		97A2F46ADAF44EBC361837C2 /* pulse.nsf */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = file;
+			path = pulse.nsf;
+			sourceTree = "<group>";
+		};
+		CA4B2DF6C0632AD67AC8B966 /* warning.nsf */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = file;
+			path = warning.nsf;
+			sourceTree = "<group>";
+		};
+		67BD5810EC8162548419905B /* generated */ = {
+			isa = PBXGroup;
+			children = (97A2F46ADAF44EBC361837C2, CA4B2DF6C0632AD67AC8B966);
+			path = Generated;
+			sourceTree = "<group>";
+		};
+		F9C484F96B5320CA3C10171A /* CirrusRetroprod */ = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.application;
+			includeInIndex = 0;
+			path = CirrusRetro.app;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		64CD7237D2962F9AE60ADE69 /* CirrusRetroTestsprod */ = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.cfbundle;
+			includeInIndex = 0;
+			path = CirrusRetroTests.xctest;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		FE0A091FDBFB3E9C31B7A1BD /* Products */ = {
+			isa = PBXGroup;
+			children = (F9C484F96B5320CA3C10171A, 64CD7237D2962F9AE60ADE69);
+			sourceTree = "<group>";
+		};
+		DC76E9F0C0006E8F919E0C51 /* root */ = {
+			isa = PBXGroup;
+			children = (3A2A88DEEFF3D1D23E496597, 8B7A6DECC0651D269EA794C7, 67BD5810EC8162548419905B, FE0A091FDBFB3E9C31B7A1BD);
+			sourceTree = "<group>";
+		};
+		89E1FD6268CC0F221A2BE178 /* projectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SDKROOT = iphoneos;
+				ARCHS = arm64;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				SWIFT_VERSION = 5.0;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../include";
+				ENABLE_TESTABILITY = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = ("DEBUG=1", "$(inherited)");
+			};
+			name = Debug;
+		};
+		E6DE6C99132752C914FEF632 /* projectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SDKROOT = iphoneos;
+				ARCHS = arm64;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				SWIFT_VERSION = 5.0;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../include";
+			};
+			name = Release;
+		};
+		B0F344BED81250469ECBD560 /* projectCfg */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (89E1FD6268CC0F221A2BE178, E6DE6C99132752C914FEF632);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A2520934797E0E16045CD318 /* CirrusRetroDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = org.cirrusretro.player;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				SWIFT_OBJC_BRIDGING_HEADER = "App/Bridge.h";
+				OTHER_LDFLAGS = ("$(inherited)", "-lCirrusNSF", "-lc++");
+				LIBRARY_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/Generated/$(PLATFORM_NAME)");
+				MARKETING_VERSION = 0.2;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+			};
+			name = Debug;
+		};
+		7D96526A523EF070DC134659 /* CirrusRetroRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = org.cirrusretro.player;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				SWIFT_OBJC_BRIDGING_HEADER = "App/Bridge.h";
+				OTHER_LDFLAGS = ("$(inherited)", "-lCirrusNSF", "-lc++");
+				LIBRARY_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/Generated/$(PLATFORM_NAME)");
+				MARKETING_VERSION = 0.2;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+			};
+			name = Release;
+		};
+		9CCA460EF4FD7A2E98FB74F5 /* CirrusRetroCfg */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (A2520934797E0E16045CD318, 7D96526A523EF070DC134659);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9F2E695E7B226FB8040E6217 /* CirrusRetroTestsDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = org.cirrusretro.player.tests;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CirrusRetro.app/CirrusRetro";
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@loader_path/Frameworks");
+			};
+			name = Debug;
+		};
+		CD15A9F38A9E2A8FE38AFA46 /* CirrusRetroTestsRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = org.cirrusretro.player.tests;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CirrusRetro.app/CirrusRetro";
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@loader_path/Frameworks");
+			};
+			name = Release;
+		};
+		37C6716857ECF8FDBCED8901 /* CirrusRetroTestsCfg */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (9F2E695E7B226FB8040E6217, CD15A9F38A9E2A8FE38AFA46);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D799BAE6088A90139B415FCC /* proxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 98F54143AB4E86B28C3AFEE0;
+			proxyType = 1;
+			remoteGlobalIDString = CFABE60C682A64C2A07855DA;
+			remoteInfo = CirrusRetro;
+		};
+		DE58E2B17C19600779694943 /* dependency */ = {
+			isa = PBXTargetDependency;
+			target = CFABE60C682A64C2A07855DA;
+			targetProxy = D799BAE6088A90139B415FCC;
+		};
+		2C502611A68C82614B645A2E /* CirrusRetroSrc.AudioOutput.m */ = {
+			isa = PBXBuildFile;
+			fileRef = DC5D74846709683B71E61EE2;
+		};
+		3861B18FC6B5631F826D2AE7 /* CirrusRetroSrc.CirrusRetro.swift */ = {
+			isa = PBXBuildFile;
+			fileRef = 9929B81DEC60A8846B4C862F;
+		};
+		F69C44E7F83163B644F83132 /* CirrusRetroSrc.PCMQueue.c */ = {
+			isa = PBXBuildFile;
+			fileRef = 7388A78C4268B8DEE341150F;
+		};
+		6D8E2C25B9D70B54053DC34B /* CirrusRetroSrc.Playback.swift */ = {
+			isa = PBXBuildFile;
+			fileRef = 13B1074B56856AB38AB3B223;
+		};
+		F97CE969973DA60C4E3D3DDC /* CirrusRetroSrc.PlayerModel.swift */ = {
+			isa = PBXBuildFile;
+			fileRef = D997E5A860D4DEDC7E943745;
+		};
+		5A055674AAB1832BA9A3E09E /* CirrusRetroSrc */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (2C502611A68C82614B645A2E, 3861B18FC6B5631F826D2AE7, F69C44E7F83163B644F83132, 6D8E2C25B9D70B54053DC34B, F97CE969973DA60C4E3D3DDC);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1D7C35337F3CB15891B20A10 /* CirrusRetroLink */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E59CB254BF339590A3141DFF /* CirrusRetroRes */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (A61C4A5B99EB4F2192D0B402);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CFABE60C682A64C2A07855DA /* CirrusRetro */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9CCA460EF4FD7A2E98FB74F5;
+			buildPhases = (5A055674AAB1832BA9A3E09E, 1D7C35337F3CB15891B20A10, E59CB254BF339590A3141DFF);
+			buildRules = ();
+			dependencies = ();
+			name = CirrusRetro;
+			productName = CirrusRetro;
+			productReference = F9C484F96B5320CA3C10171A;
+			productType = "com.apple.product-type.application";
+		};
+		91DAEF328FB2FE570664838C /* CirrusRetroTestsSrc.PlaybackTests.swift */ = {
+			isa = PBXBuildFile;
+			fileRef = F5A84DD2D96DFDC4BAA8A06F;
+		};
+		CAC325D1A3DF55DD09C5A320 /* CirrusRetroTestsSrc */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (91DAEF328FB2FE570664838C);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		191A4F66D3E95B16247BD535 /* CirrusRetroTestsLink */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0B9D7714849C8CEC4082A6D /* CirrusRetroTestsRes.pulse.nsf */ = {
+			isa = PBXBuildFile;
+			fileRef = 97A2F46ADAF44EBC361837C2;
+		};
+		621399DE14947F5D8F83B51E /* CirrusRetroTestsRes.warning.nsf */ = {
+			isa = PBXBuildFile;
+			fileRef = CA4B2DF6C0632AD67AC8B966;
+		};
+		8C359BCB8371E2D8E8134722 /* CirrusRetroTestsRes */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (C0B9D7714849C8CEC4082A6D, 621399DE14947F5D8F83B51E);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9259F256A53C4A96BAF33159 /* CirrusRetroTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 37C6716857ECF8FDBCED8901;
+			buildPhases = (CAC325D1A3DF55DD09C5A320, 191A4F66D3E95B16247BD535, 8C359BCB8371E2D8E8134722);
+			buildRules = ();
+			dependencies = (DE58E2B17C19600779694943);
+			name = CirrusRetroTests;
+			productName = CirrusRetroTests;
+			productReference = 64CD7237D2962F9AE60ADE69;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		98F54143AB4E86B28C3AFEE0 /* project */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					9259F256A53C4A96BAF33159 = {
+						TestTargetID = CFABE60C682A64C2A07855DA;
+					};
+				};
+			};
+			buildConfigurationList = B0F344BED81250469ECBD560;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base);
+			mainGroup = DC76E9F0C0006E8F919E0C51;
+			productRefGroup = FE0A091FDBFB3E9C31B7A1BD;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (CFABE60C682A64C2A07855DA, 9259F256A53C4A96BAF33159);
+		};
+	};
+	rootObject = 98F54143AB4E86B28C3AFEE0;
+}

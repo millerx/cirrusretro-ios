@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# Runs only on the disposable macOS runner after environment approval.
+set -euo pipefail
+archive=${1:?usage: upload-owner-testflight ARCHIVE_PATH}
+: "${RUNNER_TEMP:?}" "${APPLE_TEAM_ID:?}" "${ASC_ISSUER_ID:?}" "${ASC_KEY_ID:?}"
+: "${ASC_PRIVATE_KEY:?}" "${DISTRIBUTION_P12_BASE64:?}" "${DISTRIBUTION_P12_PASSWORD:?}" "${APP_STORE_PROFILE_BASE64:?}"
+umask 077
+temp=$(mktemp -d "$RUNNER_TEMP/manual-signing.XXXXXX")
+keychain="$temp/signing.keychain-db"
+installed_profile=
+cleanup() {
+  if [[ -n "$installed_profile" ]]; then rm -f "$installed_profile"; fi
+  security delete-keychain "$keychain" >/dev/null 2>&1 || true
+  rm -rf "$temp"
+}
+trap cleanup EXIT
+
+printf '%s' "$DISTRIBUTION_P12_BASE64" | /usr/bin/base64 -D > "$temp/distribution.p12"
+printf '%s' "$APP_STORE_PROFILE_BASE64" | /usr/bin/base64 -D > "$temp/app.mobileprovision"
+unset DISTRIBUTION_P12_BASE64 APP_STORE_PROFILE_BASE64
+printf '%s\n' "$ASC_PRIVATE_KEY" > "$temp/upload.p8"
+unset ASC_PRIVATE_KEY
+
+password=$(openssl rand -hex 32)
+security create-keychain -p "$password" "$keychain"
+security set-keychain-settings -lut 3600 "$keychain"
+security unlock-keychain -p "$password" "$keychain"
+security import "$temp/distribution.p12" -k "$keychain" -f pkcs12 \
+  -P "$DISTRIBUTION_P12_PASSWORD" -T /usr/bin/codesign
+unset DISTRIBUTION_P12_PASSWORD
+security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$keychain" >/dev/null
+# Keep the runner's login keychain available for Xcode's Apple WWDR intermediate.
+security list-keychains -d user -s "$keychain" "$HOME/Library/Keychains/login.keychain-db"
+security cms -D -i "$temp/app.mobileprovision" -o "$temp/profile.plist"
+
+# App Store profiles contain a single signing certificate. Pin its SHA-1
+# fingerprint and select the installed profile by Apple's exact profile name.
+uuid=$(python3 - "$temp/profile.plist" "$temp/ExportOptions.plist" <<'PY'
+import hashlib
+import os
+import plistlib
+import sys
+import uuid
+from datetime import datetime, timezone
+
+with open(sys.argv[1], 'rb') as source:
+    profile = plistlib.load(source)
+team = os.environ['APPLE_TEAM_ID']
+bundle = 'org.cirrusretro.player'
+ent = profile['Entitlements']
+if (team not in profile['TeamIdentifier']
+        or ent['application-identifier'] not in [p + '.' + bundle for p in profile['ApplicationIdentifierPrefix']]
+        or profile['ExpirationDate'] <= datetime.now(timezone.utc).replace(tzinfo=None)
+        or profile.get('ProvisionedDevices') is not None or profile.get('ProvisionsAllDevices')
+        or ent.get('get-task-allow') or not ent.get('beta-reports-active')
+        or len(profile['DeveloperCertificates']) != 1):
+    sys.exit('Expected an unexpired App Store Connect profile for this team and app')
+# Preserve the UUID spelling from the signed profile for its installed filename.
+profile_id = profile['UUID']
+if str(uuid.UUID(profile_id)) != profile_id.lower():
+    sys.exit('Expected a canonical provisioning profile UUID')
+profile_name = profile['Name']
+if not isinstance(profile_name, str) or not profile_name.strip():
+    sys.exit('Expected a named App Store Connect provisioning profile')
+fingerprint = hashlib.sha1(profile['DeveloperCertificates'][0]).hexdigest().upper()
+options = dict(method='app-store-connect', destination='upload', signingStyle='manual',
+               teamID=team, signingCertificate=fingerprint, provisioningProfiles={bundle: profile_name},
+               testFlightInternalTestingOnly=True, manageAppVersionAndBuildNumber=False)
+with open(sys.argv[2], 'wb') as dest:
+    plistlib.dump(options, dest)
+print(profile_id)
+PY
+)
+identity=$(plutil -extract signingCertificate raw "$temp/ExportOptions.plist")
+if ! security find-identity -v -p codesigning "$keychain" | grep -F "$identity" >/dev/null; then
+  echo "The profile requires a different or invalid distribution identity" >&2
+  exit 1
+fi
+profiles="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+mkdir -p "$profiles"
+# On this fresh runner the UUID should be new. Only clean up our own file.
+(set -o noclobber; cat "$temp/app.mobileprovision" > "$profiles/$uuid.mobileprovision")
+installed_profile="$profiles/$uuid.mobileprovision"
+xcodebuild -exportArchive -archivePath "$archive" -exportPath "$temp/export" \
+  -exportOptionsPlist "$temp/ExportOptions.plist" -authenticationKeyPath "$temp/upload.p8" \
+  -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"

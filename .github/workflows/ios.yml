@@ -1,0 +1,36 @@
+name: Native iOS
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    # The approved budget covers standard public-repository runners.
+    if: github.event.repository.private == false
+    runs-on: macos-26
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - run: xcodebuild -version && cmake --version
+      - run: scripts/build-ios-core
+      - name: Verify unsigned device archive for TestFlight
+        run: scripts/archive-ios "$RUNNER_TEMP/CirrusRetro.xcarchive" "$GITHUB_RUN_NUMBER"
+      - name: Run app-hosted tests on an ARM64 iOS simulator
+        run: |
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          import subprocess
+          sdk = subprocess.check_output(["xcrun", "--sdk", "iphonesimulator", "--show-sdk-version"], text=True).strip()
+          preferred = "com.apple.CoreSimulator.SimRuntime.iOS-" + sdk.replace(".", "-")
+          devices = json.load(sys.stdin)["devices"]
+          runtimes = sorted(devices, key=lambda r: (r == preferred, r), reverse=True)
+          print(next(d["udid"] for runtime in runtimes
+                     if ".iOS-" in runtime for d in devices[runtime] if d["name"].startswith("iPhone")))')
+          xcodebuild -project ios/CirrusRetro.xcodeproj -scheme CirrusRetro -configuration Debug \
+            -destination "platform=iOS Simulator,id=$udid,arch=arm64" -parallel-testing-enabled NO test

@@ -12,13 +12,13 @@ The primary objective is personal installation and ongoing use on the owner's iP
 
 Milestone 1 merged via PR #1. Independent review and Linux CI passed; subjective listening and Apple SDK/device validation remain deferred.
 
-## 1.5. Autonomous development workflow (current)
+## 1.5. Autonomous development workflow (complete)
 - Evaluate supported subscription-backed Codex and GitHub orchestration; no paid API or extra credits.
 - Prefer existing Linux CI and GitHub PR comments. Establish bounded two-pass independent review and fix handoffs, commit-SHA verification, final CI and owner approval.
 - Document supported triggers, quota handling, security boundaries, exception escalation and any unavoidable manual steps.
 - Acceptance: demonstrate a safe, low-overhead workflow where feasible; otherwise document the minimal manual fallback. Do not build a bespoke orchestration platform or start native iOS work in this milestone.
 
-## 2. Native iOS playback
+## 2. Native iOS playback (in progress)
 - Package the core for iOS device and simulator; create a minimal SwiftUI player and Files import.
 - Integrate AVAudioEngine and bounded buffering; test start, pause, stop, track selection and errors.
 - Acceptance: hosted macOS build and simulator tests pass; physical iPhone/iPad playback verified by owner.
