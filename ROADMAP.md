@@ -26,9 +26,19 @@ Milestone 1 merged via PR #1. Independent review and Linux CI passed; subjective
 Owner reports successful TestFlight installation and playback of two tracks from a sample NSF on physical iPhone (version 0.2, build 2 delivered). Milestone 2 merged.
 
 ## 3. Music player MVP
-- Add SPC and VGM after individual audits; local library, metadata, playback queue and iPhone layouts.
-- Add background playback, lock-screen controls, interruption and route handling.
-- Acceptance: offline playback, stable background behavior and device testing on iPhone.
+
+### 3A. Additional music formats (current)
+- Add SPC first, then VGM, using the existing GME engine where licensing and feasibility permit. Audit enabled components separately; avoid GPL-only optional components unless explicitly approved.
+- Generalize the portable interface and format detection as needed while preserving NSF compatibility, bounded rendering, ownership and error recovery.
+- Extend iPhone Files import and playback to supported formats. Use lawful fixtures, portable regression tests, hosted iPhone builds and simulator tests.
+- Acceptance: independent two-pass review, green CI, owner TestFlight playback of SPC and VGM on iPhone with NSF regression smoke test.
+
+### 3B. Music library
+- Persistent offline collection, multiple-file import, metadata, browsing and playback queue; iPhone layouts only.
+
+### 3C. Native music experience
+- Background playback, lock-screen controls, interruption and route handling.
+- Acceptance: stable offline and background playback on iPhone.
 
 ## 4. Beta and expansion
 - Establish sustainable personal installation and signing via hosted macOS CI; optionally configure limited TestFlight sharing after licensing review. Evaluate battery, memory, audio fidelity and accessibility.
