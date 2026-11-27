@@ -106,6 +106,7 @@ jobs:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
       - name: Sign and upload for internal testing only
         env:
+          APPLE_MEMBERSHIP_EXPIRY: ${{ vars.APPLE_MEMBERSHIP_EXPIRY }}
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
           ASC_ISSUER_ID: ${{ vars.ASC_ISSUER_ID }}
           ASC_KEY_ID: ${{ vars.ASC_KEY_ID }}

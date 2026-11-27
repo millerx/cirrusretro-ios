@@ -50,6 +50,8 @@ In Library, tap **+** to import one or more NSF, SPC or supported VGM files from
 
 Playback continues when you switch apps or lock the phone. The Lock Screen, Control Center and headset controls share the app's playback session. **Next** plays the first queued track, falling back to the next track in the recording. **Previous** returns to the preceding selection and puts the track you left at the front of Up Next. After an interruption, playback resumes if iOS permits it and you were still listening. Disconnecting the audio device pauses playback.
 
+For 0.4.0, use the [iPhone acceptance checklist and renewal plan](docs/milestone-4.md).
+
 #### Physical acceptance for 0.3.2
 
 - Update over 0.3.1. Confirm the existing library opens offline and play an NSF, an SPC and a supported VGM.

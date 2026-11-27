@@ -38,7 +38,7 @@ final class SystemMedia {
         }
     }
 
-    private var targets: [(MPRemoteCommand, Any, Command)] = []
+    private var targets: [(MPRemoteCommand, Any)] = []
     private var observers: [NSObjectProtocol] = []
 
     func connect(to player: LibraryPlayer) {
@@ -49,12 +49,14 @@ final class SystemMedia {
             (center.previousTrackCommand, .previous)
         ]
         for (remote, command) in commands {
-            remote.isEnabled = false
+            // Advertise transport support before the nonmixable audio session
+            // activates. The handler checks the actual selection on its worker.
+            remote.isEnabled = command != .next && command != .previous
             let token = remote.addTarget { [weak player] _ in
                 guard let player else { return .commandFailed }
                 return player.playback.queue.sync { command.run(on: player) }
             }
-            targets.append((remote, token, command))
+            targets.append((remote, token))
         }
         center.changePlaybackPositionCommand.isEnabled = false
         center.skipForwardCommand.isEnabled = false
@@ -99,7 +101,7 @@ final class SystemMedia {
 
     deinit {
         for token in observers { NotificationCenter.default.removeObserver(token) }
-        for (remote, token, _) in targets { remote.removeTarget(token) }
+        for (remote, token) in targets { remote.removeTarget(token) }
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 
@@ -119,7 +121,9 @@ final class SystemMedia {
     }
 
     func update(_ snapshot: PlayerSnapshot) {
+        let center = MPRemoteCommandCenter.shared()
+        center.nextTrackCommand.isEnabled = Command.next.enabled(in: snapshot)
+        center.previousTrackCommand.isEnabled = Command.previous.enabled(in: snapshot)
         MPNowPlayingInfoCenter.default().nowPlayingInfo = Self.info(for: snapshot)
-        for (remote, _, command) in targets { remote.isEnabled = command.enabled(in: snapshot) }
     }
 }

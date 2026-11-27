@@ -115,6 +115,41 @@ final class PlaybackTests: XCTestCase {
         }
     }
 
+    func testUpgradeReadsExisting032CatalogAndRepairsChangedAudioInPlace() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        // Frozen 0.3.2 on-disk layout, independent of the current catalog writer.
+        let id = "1a1416707d79a7623cbd1c00d982f0fd10ace36fbbd864e960f8eb45f64f5913"
+        let folder = root.appendingPathComponent("MusicLibrary").appendingPathComponent(id)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let metadata = Data(#"{"fileName":"original.nsf","metadata":{"format":"NSF","title":"Pulse pair","artist":"Cirrus Retro test","copyright":"Synthetic fixture","trackCount":2,"defaultTrack":1}}"#.utf8)
+        let catalogURL = folder.appendingPathComponent("metadata.json")
+        try metadata.write(to: catalogURL)
+        let original = try fixture()
+        try original.write(to: folder.appendingPathComponent("music"))
+        let library = MusicLibrary(applicationSupport: root)
+        let item = try XCTUnwrap(library.contents().recordings.first)
+        XCTAssertEqual(item.id, id)
+        XCTAssertEqual(item.metadata.defaultTrack, 1)
+        XCTAssertEqual(try item.readForPlayback(), original)
+        XCTAssertFalse(try library.add(original, fileName: "copy.nsf").added)
+        XCTAssertEqual(try Data(contentsOf: catalogURL), metadata)
+
+        // A different, playable recording must not be opened under this identity.
+        try fixture(ext: "spc").write(to: item.url)
+        let player = LibraryPlayer()
+        try player.playback.queue.sync {
+            defer { player.playback.shutdown() }
+            XCTAssertThrowsError(try player.prepare(item))
+            XCTAssertNil(player.recording)
+            let repaired = try library.add(original, fileName: "backup.nsf").recording
+            XCTAssertEqual(repaired.fileName, "original.nsf")
+            try player.prepare(repaired)
+            XCTAssertEqual(player.recording?.id, id)
+        }
+        XCTAssertEqual(try library.contents().recordings.count, 1)
+    }
+
     func testLibraryKeepsValidImportsWhenOthersFailAndRepairsMissingMedia() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let library = MusicLibrary(applicationSupport: root)
@@ -189,6 +224,74 @@ final class PlaybackTests: XCTestCase {
             XCTAssertNil(session.recording)
             XCTAssertEqual(session.playback.state.transport, .stopped)
         }
+    }
+
+    func testOpeningThePlayingLibraryTrackKeepsItsAudioAndHistory() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = MusicLibrary(applicationSupport: root)
+        let pair = try library.add(fixture(), fileName: "pair.nsf").recording
+        let pulse = try library.add(fixture(ext: "spc"), fileName: "pulse.spc").recording
+        let player = LibraryPlayer()
+        try player.playback.queue.sync {
+            defer { player.playback.shutdown() }
+            try player.play(pair, track: 1)
+            player.enqueue(pulse, track: 0)
+            let queued = player.upcoming.map(\.id)
+            let remaining = player.playback.remaining
+
+            // The active emulator already owns the music. Opening Playback
+            // from Library must work even if reopening its media would fail.
+            let moved = root.appendingPathComponent("held.nsf")
+            try FileManager.default.moveItem(at: pair.url, to: moved)
+            try player.play(pair, track: 1)
+            XCTAssertTrue(player.snapshot.isPlaying(recordingID: pair.id, track: 1))
+            XCTAssertEqual(player.playback.remaining, remaining)
+            XCTAssertFalse(player.snapshot.hasPrevious)
+            XCTAssertEqual(player.upcoming.map(\.id), queued)
+
+            try FileManager.default.moveItem(at: moved, to: pair.url)
+            try player.play(pair, track: 0)
+            XCTAssertTrue(player.snapshot.isPlaying(recordingID: pair.id, track: 0))
+            try player.play(pulse, track: 0)
+            XCTAssertTrue(player.snapshot.isPlaying(recordingID: pulse.id, track: 0))
+        }
+    }
+
+    @MainActor
+    func testNowPlayingTransportIsRegisteredBeforePlayback() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = MusicLibrary(applicationSupport: root)
+        let item = try library.add(fixture(), fileName: "pair.nsf").recording
+        let player = LibraryPlayer()
+        let media = SystemMedia()
+        media.connect(to: player)
+        defer { player.playback.queue.sync { player.playback.shutdown() } }
+        let commands = MPRemoteCommandCenter.shared()
+        let info = MPNowPlayingInfoCenter.default()
+        media.update(player.snapshot)
+        XCTAssertTrue(commands.playCommand.isEnabled)
+        XCTAssertTrue(commands.pauseCommand.isEnabled)
+        XCTAssertTrue(commands.togglePlayPauseCommand.isEnabled)
+        XCTAssertFalse(commands.nextTrackCommand.isEnabled)
+        XCTAssertNil(info.nowPlayingInfo?[MPMediaItemPropertyTitle])
+
+        let playing = try player.playback.queue.sync {
+            try player.play(item, track: 0)
+            return player.snapshot
+        }
+        media.update(playing)
+        XCTAssertEqual(info.nowPlayingInfo?[MPMediaItemPropertyTitle] as? String, "Pulse pair · Track 1")
+        XCTAssertEqual(info.nowPlayingInfo?[MPNowPlayingInfoPropertyPlaybackRate] as? Double, 1)
+        XCTAssertTrue(commands.nextTrackCommand.isEnabled)
+        let paused = player.playback.queue.sync {
+            player.playback.pause()
+            return player.snapshot
+        }
+        media.update(paused)
+        XCTAssertEqual(info.nowPlayingInfo?[MPNowPlayingInfoPropertyPlaybackRate] as? Double, 0)
+        XCTAssertTrue(commands.playCommand.isEnabled)
     }
 
     func testSystemControlsFollowQueueMetadataAndLibraryIndicator() throws {
@@ -315,9 +418,40 @@ final class PlaybackTests: XCTestCase {
             try player.play()
             XCTAssertEqual(player.remaining, paused)
             try player.select(0)
-            XCTAssertEqual(player.remaining, Int(CR_MUSIC_MAX_TRACK_FRAMES - CR_BLOCK_FRAMES))
+            XCTAssertEqual(player.remaining, Int(CR_MUSIC_MAX_TRACK_FRAMES - CR_QUEUE_FRAMES))
             player.stop()
             XCTAssertEqual(player.state.transport, .stopped)
+        }
+    }
+
+    func testLargeAudioPullsBetweenProducerWakes() throws {
+        let frames: AVAudioFrameCount = 4096
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 2))
+        for ext in ["nsf", "spc"] {
+            let output = CRAudioOutput()
+            let player = Playback { output }
+            try player.queue.sync { () throws -> Void in
+                defer { player.shutdown() }
+                try output.engine.enableManualRenderingMode(.offline, format: format, maximumFrameCount: frames)
+                let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames))
+                try player.load(fixture(ext: ext))
+                try player.play()
+                // Holding the serial queue makes the producer cadence deterministic.
+                // Alternate single and double pulls before allowing its next wake.
+                for wake in 0..<8 {
+                    for _ in 0..<(1 + wake % 2) {
+                        let before = Int(output.freeFrames)
+                        XCTAssertEqual(try output.engine.renderOffline(frames, to: buffer), .success)
+                        XCTAssertEqual(buffer.frameLength, frames)
+                        XCTAssertEqual(Int(output.freeFrames) - before, Int(frames), "Every frame must come from the ring")
+                    }
+                    let consumed = Int(output.freeFrames)
+                    let previous = player.remaining
+                    player.tick()
+                    XCTAssertEqual(previous - player.remaining, consumed)
+                    XCTAssertEqual(output.freeFrames, 0)
+                }
+            }
         }
     }
 

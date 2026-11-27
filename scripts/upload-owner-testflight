@@ -71,6 +71,7 @@ with open(sys.argv[2], 'wb') as dest:
 print(profile_id)
 PY
 )
+python3 "$(dirname "$0")/testflight-expiry.py" "$temp/profile.plist"
 identity=$(plutil -extract signingCertificate raw "$temp/ExportOptions.plist")
 if ! security find-identity -v -p codesigning "$keychain" | grep -F "$identity" >/dev/null; then
   echo "The profile requires a different or invalid distribution identity" >&2

@@ -27,4 +27,6 @@ test -s "$app/Assets.car"
 test "$(plutil -extract MinimumOSVersion raw "$plist")" = 16.0
 test "$(plutil -extract UIBackgroundModes.0 raw "$plist")" = audio
 version=$(plutil -extract CFBundleShortVersionString raw "$plist")
-echo "Archived Cirrus Retro $version ($build_number)"
+archive_sdk=$(plutil -extract DTSDKName raw "$plist")
+[[ "$archive_sdk" == "iphoneos$sdk" ]]
+echo "Archived Cirrus Retro $version ($build_number) with $archive_sdk, minimum iOS 16.0"

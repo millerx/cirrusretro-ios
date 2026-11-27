@@ -71,12 +71,13 @@ final class LibraryPlayer {
     }
 
     func prepare(_ item: Recording, track: Int? = nil, continuingSession: Bool = false) throws {
-        let data = try MusicImport.read(item.url)
+        let data = try item.readForPlayback()
         try playback.load(data, track: track, continuingSession: continuingSession)
         recording = item
     }
 
     func play(_ item: Recording, track: Int) throws {
+        guard !snapshot.isPlaying(recordingID: item.id, track: track) else { return }
         let previous = playback.hasPlayedSelection ? currentTrack : nil
         try start(item, track: track)
         if let previous { history.append(previous) }
