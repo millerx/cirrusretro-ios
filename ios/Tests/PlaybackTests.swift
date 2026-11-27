@@ -130,12 +130,13 @@ final class PlaybackTests: XCTestCase {
         XCTAssertEqual(try library.contents().recordings.count, 2)
     }
 
-    func testLibraryQueueAdvancesPastMissingTrackAndPurgesRemovedRecording() throws {
+    func testLibraryQueueSkipsMissingAndUnplayableTracksAndPurgesRemovedRecording() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let library = MusicLibrary(applicationSupport: root)
         defer { try? FileManager.default.removeItem(at: root) }
         let missing = try library.add(fixture(ext: "spc"), fileName: "missing.spc").recording
         let finite = try library.add(fixture(ext: "vgm"), fileName: "finite.vgm").recording
+        let unplayable = try library.add(fixture("warning"), fileName: "warning.nsf").recording
         let next = try library.add(fixture(), fileName: "next.nsf").recording
         try FileManager.default.removeItem(at: missing.url)
 
@@ -147,11 +148,12 @@ final class PlaybackTests: XCTestCase {
                 guard snapshot.recording?.id == next.id else { return }
                 XCTAssertEqual(snapshot.playback.track, 0)
                 XCTAssertEqual(snapshot.playback.transport, .playing)
-                XCTAssertTrue(snapshot.message?.contains("Skipped 1") == true)
+                XCTAssertTrue(snapshot.message?.contains("Skipped 2") == true)
                 XCTAssertEqual(snapshot.upcoming.map(\.track), [1])
                 advanced.fulfill()
             }
             session.enqueue(missing, track: 0)
+            session.enqueue(unplayable, track: 1)
             session.enqueue(next, track: 0)
             session.enqueue(next, track: 1)
             try session.play(finite, track: 0)

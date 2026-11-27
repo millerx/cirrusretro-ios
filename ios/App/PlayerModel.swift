@@ -74,22 +74,30 @@ final class LibraryPlayer {
         var skipped = 0
         while !upcoming.isEmpty {
             let item = upcoming.removeFirst()
-            do {
-                try prepare(item.recording, track: item.track)
-            } catch {
-                skipped += 1
-                if firstFailure == nil {
-                    firstFailure = "\(item.recording.title) — \(error.localizedDescription)"
-                }
-                continue
+            guard let error = try startQueuedTrack(item) else { break }
+            skipped += 1
+            if firstFailure == nil {
+                firstFailure = "\(item.recording.title) — \(error.localizedDescription)"
             }
-            // An audio output failure leaves this track selected for retry.
-            try playback.play()
-            break
         }
         if let firstFailure {
             throw PlayerFailure("Skipped \(skipped) queued item(s). \(firstFailure)")
         }
+    }
+
+    private func startQueuedTrack(_ item: QueuedTrack) throws -> Error? {
+        do {
+            try prepare(item.recording, track: item.track)
+        } catch {
+            return error
+        }
+        do {
+            try playback.play()
+        } catch let error as PlaybackEmulationFailure {
+            return error
+        }
+        // Audio session or engine errors propagate so the selected track can be retried.
+        return nil
     }
 }
 

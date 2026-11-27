@@ -7,8 +7,13 @@ struct PlayerFailure: LocalizedError {
     var errorDescription: String? { message }
 }
 
+struct PlaybackEmulationFailure: LocalizedError {
+    let message: String
+    var errorDescription: String? { message }
+}
+
 private func check(_ error: UnsafePointer<CChar>?) throws {
-    if let error { throw PlayerFailure(String(cString: error)) }
+    if let error { throw PlaybackEmulationFailure(message: String(cString: error)) }
 }
 
 struct PlaybackState {
