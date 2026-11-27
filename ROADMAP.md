@@ -28,7 +28,7 @@ Owner reports successful TestFlight installation and playback of two tracks from
 ## 3. Music player MVP
 
 ### 3A. Additional music formats (current)
-- Add SPC first, then VGM, using the existing GME engine where licensing and feasibility permit. Audit enabled components separately; avoid GPL-only optional components unless explicitly approved.
+- Add SPC first, then VGM, using the existing GME engine where licensing and feasibility permit. Audit enabled components separately; prefer permissive or LGPL components when comparable, but permit GPL components for private use when technically advantageous, subject to AGENTS.md and separate external-sharing review.
 - Generalize the portable interface and format detection as needed while preserving NSF compatibility, bounded rendering, ownership and error recovery.
 - Extend iPhone Files import and playback to supported formats. Use lawful fixtures, portable regression tests, hosted iPhone builds and simulator tests.
 - Acceptance: independent two-pass review, green CI, owner TestFlight playback of SPC and VGM on iPhone with NSF regression smoke test.
