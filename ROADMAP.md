@@ -46,10 +46,12 @@ Owner reports successful TestFlight installation and playback of two tracks from
 
 Milestone 3A merged via PR #4; owner reports completion. Independent review and hosted CI passed. App version 0.3.0.
 
-### 3B. Music library (current)
+### 3B. Music library (complete)
 - Persistent offline collection, multiple-file import, metadata, browsing and playback queue; iPhone layouts only.
 
-### 3C. Native music experience
+Milestone 3B merged via PR #5. Owner physical iPhone acceptance passed on 0.3.1 build 5; final targeted review and hosted Linux and iPhone CI passed.
+
+### 3C. Native music experience (current)
 - Background playback, lock-screen controls, interruption and route handling.
 - Acceptance: stable offline and background playback on iPhone.
 
