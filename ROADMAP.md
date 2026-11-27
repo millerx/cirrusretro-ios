@@ -2,6 +2,17 @@
 
 The primary objective is personal installation and ongoing use on the owner's iPhone. Limited sharing with a friend through TestFlight is optional. Public App Store release and monetization are out of scope. Prefer a sustainable remote signing and installation workflow; account for provisioning and beta expiration. Public source visibility does not waive dependency licenses; review obligations for any binary sharing, including TestFlight.
 
+## Milestone versions and iPhone acceptance
+
+| Milestone | App version |
+| --- | --- |
+| 3A · Additional music formats | 0.3.0 |
+| 3B · Music library | 0.3.1 |
+| 3C · Native music experience | 0.3.2 |
+| 4 · Beta and expansion | 0.4.0 |
+
+Each personal TestFlight delivery gets a fresh build number, including deliveries for the same app version. For each major milestone, deliver the reviewed and tested feature revision to the owner's iPhone before merge. The owner verifies that build on the device and explicitly approves merging it into `main`.
+
 ## 1. Feasibility and portable NSF prototype (complete)
 - Audit upstream engines, dependency versions, licenses and native portability; document potential distribution constraints.
 - Define a small C API for loading, metadata, track selection, rendering PCM and cleanup.

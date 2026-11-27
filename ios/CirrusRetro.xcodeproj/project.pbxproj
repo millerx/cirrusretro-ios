@@ -198,7 +198,7 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "App/Bridge.h";
 				OTHER_LDFLAGS = ("$(inherited)", "-lCirrusNSF", "-lc++");
 				LIBRARY_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/Generated/$(PLATFORM_NAME)");
-				MARKETING_VERSION = 0.2;
+				MARKETING_VERSION = 0.3.0;
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -214,7 +214,7 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "App/Bridge.h";
 				OTHER_LDFLAGS = ("$(inherited)", "-lCirrusNSF", "-lc++");
 				LIBRARY_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/Generated/$(PLATFORM_NAME)");
-				MARKETING_VERSION = 0.2;
+				MARKETING_VERSION = 0.3.0;
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

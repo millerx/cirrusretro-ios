@@ -25,3 +25,5 @@ test "$(plutil -extract CFBundleVersion raw "$plist")" = "$build_number"
 test "$(plutil -extract CFBundleIcons.CFBundlePrimaryIcon.CFBundleIconName raw "$plist")" = AppIcon
 test -s "$app/Assets.car"
 test "$(plutil -extract MinimumOSVersion raw "$plist")" = 16.0
+version=$(plutil -extract CFBundleShortVersionString raw "$plist")
+echo "Archived Cirrus Retro $version ($build_number)"

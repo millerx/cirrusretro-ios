@@ -20,6 +20,9 @@ The primary objective is personal installation and ongoing use on the owner's iP
 
 ## Workflow
 - Read ROADMAP.md before implementation. Keep tasks focused on the current milestone. Use feature branches and pull requests; do not merge automatically.
+- Use the milestone app version in ROADMAP.md for both Debug and Release. The Owner TestFlight workflow supplies an independently increasing build number for each delivery.
+- The owner gives standing approval to commit and push feature-branch changes, run existing CI, and upload reviewed and tested owner-only TestFlight builds within the established budget and security constraints. Use the protected delivery workflow. Escalate only significant exceptions or actions that require the owner.
+- When a major milestone build is available in personal TestFlight, notify the owner with its app version, build number and a short iPhone acceptance checklist. Keep the PR open through physical verification. Merging into `main` requires the owner's explicit approval after that verification.
 - Document build commands, dependency provenance, decisions, test results and limitations. Never claim an iOS build or device test passed unless actually executed.
 - Develop portable code in Codex Cloud; use hosted macOS CI for Xcode compilation and simulator tests. Prefer Xcode Cloud for TestFlight, with GitHub Actions macOS as an alternative. Do not assume signing or Apple enrollment is configured.
 - Do not commit secrets, signing assets, copyrighted game music or ROMs without redistribution rights. Use original synthetic or explicitly redistributable fixtures with provenance.
