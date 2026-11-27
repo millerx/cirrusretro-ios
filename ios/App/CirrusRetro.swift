@@ -4,13 +4,9 @@ import UniformTypeIdentifiers
 @main
 struct CirrusRetroApp: App {
     @StateObject private var model = PlayerModel()
-    @Environment(\.scenePhase) private var phase
 
     var body: some Scene {
         WindowGroup { PlayerView(model: model) }
-            .onChange(of: phase) { phase in
-                if phase == .background { model.pause() }
-            }
     }
 }
 
