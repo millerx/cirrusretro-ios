@@ -34,7 +34,7 @@ final class Playback {
     var state: PlaybackState {
         var snapshot = transportState
         if let output {
-            let buffered = Int(CR_QUEUE_FRAMES) - output.freeFrames
+            let buffered = Int(CR_QUEUE_FRAMES) - Int(output.freeFrames)
             snapshot.elapsed = Double(max(0, frameLimit - remaining - buffered)) / Double(CR_MUSIC_RATE)
         }
         return snapshot
