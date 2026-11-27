@@ -17,7 +17,7 @@ The primary objective is personal installation and ongoing use on the owner's iP
 
 ## Direction
 
-Native SwiftUI for iPhone; portable C/C++ emulation behind a C API; AVAudioEngine playback; offline file import and library; eventual background playback and system media controls. The player recognizes raw NSF, SPC and supported Sega VGM streams by their contents.
+Native SwiftUI for iPhone; portable C/C++ emulation behind a C API; AVAudioEngine playback; offline file import and library; background playback and system media controls. The player recognizes raw NSF, SPC and supported Sega VGM streams by their contents.
 
 Development is intended to use Codex Cloud, GitHub and hosted macOS CI, preferably Xcode Cloud for distribution. No backend is planned.
 
@@ -45,6 +45,18 @@ See the [Milestone 1 audit, design and test record](docs/milestone-1.md), [roadm
 Milestone 2 is merged; the owner confirmed TestFlight installation and playback of two NSF tracks on iPhone. iPad-specific development is deferred.
 
 In Library, tap **+** to import one or more NSF, SPC or supported VGM files from Files. The app saves local copies for offline use and detects duplicates by file contents. Existing installations automatically bring their previous saved recording into the library. Search by title, artist, copyright, filename or format. Open a recording to play a track or add it to the queue. In Playback, use **Play Next** to start the queue or skip ahead. Tracks also advance automatically when playback finishes. The queue lasts for the current app session. Swipe a recording in Library to remove the app’s copy and its queued tracks. See the [supported formats, dependency audit and personal iPhone checks](docs/milestone-3a.md). The hosted macOS workflow builds for device and runs simulator tests without Apple signing credentials. See the [native build, playback design and personal installation guide](docs/milestone-2.md).
+
+### Native playback on iPhone
+
+Playback continues when you switch apps or lock the phone. The Lock Screen, Control Center and headset controls share the app's playback session. **Next** plays the first queued track, falling back to the next track in the recording. **Previous** returns to the preceding selection and puts the track you left at the front of Up Next. After an interruption, playback resumes if iOS permits it and you were still listening. Disconnecting the audio device pauses playback.
+
+#### Physical acceptance for 0.3.2
+
+- Update over 0.3.1. Confirm the existing library opens offline and play an NSF, an SPC and a supported VGM.
+- Queue a second recording behind a short finite VGM. Lock the iPhone through the transition. Check the sound, title, artist and track number on the Lock Screen.
+- Try Pause, Play, Next and Previous from the Lock Screen and Control Center. Reopen Playback and the Library track list. Check the queue, transport and speaker indicator agree.
+- Interrupt playing audio with a call or Siri. Check recovery when iOS allows it. Repeat while paused and confirm it stays paused.
+- Connect Bluetooth headphones during playback and use their controls. Disconnect while playing and confirm playback pauses. Reconnect, press Play and check it resumes from the paused position.
 
 ### Manual steps for a personal TestFlight build
 

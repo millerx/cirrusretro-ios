@@ -1,4 +1,5 @@
 import AVFAudio
+import MediaPlayer
 import XCTest
 @testable import CirrusRetro
 
@@ -187,6 +188,88 @@ final class PlaybackTests: XCTestCase {
             XCTAssertTrue(session.upcoming.isEmpty)
             XCTAssertNil(session.recording)
             XCTAssertEqual(session.playback.state.transport, .stopped)
+        }
+    }
+
+    func testSystemControlsFollowQueueMetadataAndLibraryIndicator() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = MusicLibrary(applicationSupport: root)
+        let nsf = try library.add(fixture(), fileName: "pair.nsf").recording
+        let vgm = try library.add(fixture(ext: "vgm"), fileName: "finite.vgm").recording
+        let player = LibraryPlayer()
+        try player.playback.queue.sync {
+            defer { player.playback.shutdown() }
+            try player.prepare(nsf, track: 0)
+            XCTAssertNil(SystemMedia.info(for: player.snapshot))
+            try player.playback.play()
+            XCTAssertFalse(SystemMedia.Command.previous.enabled(in: player.snapshot))
+            XCTAssertEqual(SystemMedia.Command.next.run(on: player), .success)
+            XCTAssertTrue(player.snapshot.isPlaying(recordingID: nsf.id, track: 1))
+            XCTAssertFalse(SystemMedia.Command.next.enabled(in: player.snapshot))
+            var info = try XCTUnwrap(SystemMedia.info(for: player.snapshot))
+            XCTAssertEqual(info[MPMediaItemPropertyTitle] as? String, "Pulse pair · Track 2")
+            XCTAssertEqual(info[MPMediaItemPropertyArtist] as? String, nsf.metadata.artist)
+            XCTAssertNil(info[MPMediaItemPropertyPlaybackDuration])
+
+            XCTAssertEqual(SystemMedia.Command.pause.run(on: player), .success)
+            XCTAssertFalse(player.snapshot.isPlaying(recordingID: nsf.id, track: 1))
+            info = try XCTUnwrap(SystemMedia.info(for: player.snapshot))
+            XCTAssertEqual(info[MPNowPlayingInfoPropertyPlaybackRate] as? Double, 0)
+            XCTAssertEqual(SystemMedia.Command.play.run(on: player), .success)
+            player.enqueue(vgm, track: 0)
+            XCTAssertEqual(SystemMedia.Command.next.run(on: player), .success)
+            XCTAssertTrue(player.snapshot.isPlaying(recordingID: vgm.id, track: 0))
+            info = try XCTUnwrap(SystemMedia.info(for: player.snapshot))
+            XCTAssertGreaterThan(try XCTUnwrap(info[MPMediaItemPropertyPlaybackDuration] as? Double), 0)
+            XCTAssertEqual(info[MPNowPlayingInfoPropertyPlaybackRate] as? Double, 1)
+            XCTAssertEqual(SystemMedia.Command.previous.run(on: player), .success)
+            XCTAssertTrue(player.snapshot.isPlaying(recordingID: nsf.id, track: 1))
+            XCTAssertEqual(player.upcoming.first?.recording.id, vgm.id)
+            player.playback.stop()
+            XCTAssertNil(SystemMedia.info(for: player.snapshot))
+            XCTAssertFalse(SystemMedia.Command.toggle.enabled(in: player.snapshot))
+        }
+    }
+
+    func testInterruptionIntentAndRouteLossPreservePausedPosition() throws {
+        let player = Playback()
+        try player.queue.sync {
+            defer { player.shutdown() }
+            try player.load(fixture())
+            try player.play()
+            let remaining = player.remaining
+            player.interruptionBegan()
+            XCTAssertEqual(player.state.transport, .paused)
+            XCTAssertTrue(player.resumeAfterInterruption)
+            try player.interruptionEnded(shouldResume: true)
+            XCTAssertEqual(player.state.transport, .playing)
+            XCTAssertEqual(player.remaining, remaining)
+
+            player.interruptionBegan()
+            try player.interruptionEnded(shouldResume: false)
+            XCTAssertEqual(player.state.transport, .paused)
+            try player.play()
+            player.interruptionBegan()
+            player.pause()
+            try player.interruptionEnded(shouldResume: true)
+            XCTAssertEqual(player.state.transport, .paused)
+
+            try player.play()
+            player.interruptionBegan()
+            try player.routeChanged(.oldDeviceUnavailable)
+            try player.interruptionEnded(shouldResume: true)
+            try player.routeChanged(.newDeviceAvailable)
+            XCTAssertEqual(player.state.transport, .paused)
+            XCTAssertEqual(player.remaining, remaining)
+            try player.play()
+            try player.routeChanged(.newDeviceAvailable)
+            XCTAssertEqual(player.state.transport, .playing)
+            try player.routeChanged(.oldDeviceUnavailable)
+            XCTAssertEqual(player.state.transport, .paused)
+            player.stop()
+            try player.interruptionEnded(shouldResume: true)
+            XCTAssertEqual(player.state.transport, .stopped)
         }
     }
 
