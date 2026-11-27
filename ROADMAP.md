@@ -51,14 +51,16 @@ Milestone 3A merged via PR #4; owner reports completion. Independent review and 
 
 Milestone 3B merged via PR #5. Owner physical iPhone acceptance passed on 0.3.1 build 5; final targeted review and hosted Linux and iPhone CI passed.
 
-### 3C. Native music experience (current)
+### 3C. Native music experience (complete)
 - Background playback, lock-screen controls, interruption and route handling.
 - Acceptance: stable offline and background playback on iPhone.
 
-## 4. Beta and expansion
-- Establish sustainable personal installation and signing via hosted macOS CI; optionally configure limited TestFlight sharing after licensing review. Evaluate battery, memory, audio fidelity and accessibility.
+Milestone 3C merged via PR #6; owner confirmed full physical iPhone acceptance on TestFlight 0.3.2 (6). Hosted Linux and 13 app-hosted iPhone tests passed. MVP complete.
+
+## 4. Sustainable personal-use release (current)
+- Establish sustainable owner-only TestFlight renewal using existing protected delivery infrastructure; document expiration and credential renewal, recovery and minimal owner actions. Evaluate battery, memory, audio fidelity and accessibility with measurable checks; preserve library data and playback behavior. Optional external sharing remains deferred unless separately authorized.
 - Review licensing, attribution and naming before any external binary sharing; public App Store release is not planned.
-- Consider additional formats, playlists, channel controls and visualizations after MVP stability.
+- Acceptance: reviewed 0.4.0 personal TestFlight delivery, green CI, owner iPhone regression acceptance, documented sustainable renewal and recovery. Additional formats, playlists, channel controls and visualizations remain post-MVP backlog.
 
 ## Maintenance and deferred work
 See [BACKLOG.md](BACKLOG.md) for maintenance deadlines, deferred work and follow-up verification.
