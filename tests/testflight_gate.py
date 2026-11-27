@@ -21,9 +21,11 @@ class ReviewTests(unittest.TestCase):
                      + json.dumps(state) + " -->", "user": self.bot}
         ]
         for i, sha in enumerate([self.first, self.sha]):
-            self.comments.append({"user": self.bot, "created_at": f"2026-11-27T11:00:0{i}Z",
+            self.comments.append({"user": self.bot, "created_at": f"2026-11-27T11:00:0{2*i}Z",
                                   "html_url": f"https://example.test/{i}",
                                   "body": f"<!-- codex-review-receipt:v1 -->\n**Reviewed commit:** `{sha[:10]}`"})
+        self.comments.insert(2, {"user": {"id": policy["OWNER_ID"]}, "body": "@codex review",
+                                 "created_at": "2026-11-27T11:00:01Z"})
         self.responses = {"pulls/6/commits": [{"sha": self.first}, {"sha": self.sha}],
                           "pulls/6/reviews": [], "issues/6/comments": self.comments}
 
@@ -34,6 +36,11 @@ class ReviewTests(unittest.TestCase):
     def test_receipts_for_two_distinct_passes(self):
         self.check()
         self.comments.pop(1)
+        with self.assertRaises(Rejected):
+            self.check()
+
+    def test_duplicate_receipts_from_one_pass(self):
+        self.comments.pop(2)
         with self.assertRaises(Rejected):
             self.check()
 

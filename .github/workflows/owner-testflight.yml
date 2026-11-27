@@ -21,7 +21,7 @@ jobs:
       github.repository == 'millerx/cirrusretro-ios' && github.event.repository.private == false &&
       github.ref == 'refs/heads/main' && github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_repository.full_name == github.repository &&
-      github.event.workflow_run.actor.id == 1734980 && github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.actor.id == 1734980 && github.event.workflow_run.run_attempt == 1 && github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.path == '.github/workflows/testflight-request.yml' &&
       startsWith(github.event.workflow_run.head_branch, 'owner-testflight-')
     runs-on: ubuntu-24.04

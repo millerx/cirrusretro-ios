@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 REPO = "millerx/cirrusretro-ios"
+OWNER_ID = 1734980
 CODEX_ID = 199175422
 ROOT = Path(__file__).resolve().parents[1]
 JOBS = {"linux.yml": {"linux (Release)", "linux (Sanitizers)"}, "ios.yml": {"native"}}
@@ -63,12 +64,17 @@ def verify_reviews(number, sha):
         if len(matches) == 1 and entry.get("commit_id", matches[0]) == matches[0]:
             receipts.append((entry.get("submitted_at") or entry["created_at"], matches[0], entry["html_url"]))
     receipts.sort()
-    require(len(receipts) >= 2 and receipts[-1][1] == sha and receipts[-2][0] < receipts[-1][0],
+    # One review can produce several bot messages. A new owner request between
+    # receipts distinguishes the second pass, including two passes on one SHA.
+    requests = [c["created_at"] for c in comments if c["user"]["id"] == OWNER_ID
+                and re.match(r"^@codex review\b", c["body"] or "", re.I)]
+    earlier = [r for r in receipts[:-1] if any(r[0] < t < receipts[-1][0] for t in requests)]
+    require(earlier and receipts[-1][1] == sha,
             "two distinct native Codex review passes ending at this head are required")
     require(len(summaries) == 1 and summaries[0]["commit_sha"] == sha
             and summaries[0]["status"] == "completed" and summaries[0]["has_unresolved_findings"] is False,
             "a completed Codex verdict with no unresolved findings is required on this head")
-    for _, commit, url in receipts[-2:]:
+    for _, commit, url in (earlier[-1], receipts[-1]):
         print(f"Review {commit}: {url}")
 
 
