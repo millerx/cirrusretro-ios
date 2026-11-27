@@ -45,3 +45,10 @@ See the [Milestone 1 audit, design and test record](docs/milestone-1.md), [roadm
 Milestone 2 is merged; the owner confirmed TestFlight installation and playback of two NSF tracks on iPhone. iPad-specific development is deferred.
 
 The SwiftUI player imports one NSF, SPC or VGM from Files, saves it for offline playback and plays it through AVAudioEngine. Existing installations retain their saved NSF. See the [supported formats, dependency audit and personal iPhone checks](docs/milestone-3a.md). The hosted macOS workflow builds for device and runs simulator tests without Apple signing credentials. See the [native build, playback design and personal installation guide](docs/milestone-2.md).
+
+### Manual steps for a personal TestFlight build
+
+1. In GitHub Actions, open the **Owner TestFlight** run. Confirm the commit matches the reviewed revision and that only the owner will receive the build. Select **Review deployments → owner-testflight → Approve and deploy**. The workflow then signs and uploads the app.
+2. After Apple processes the upload, open **App Store Connect → Apps → Cirrus Retro → TestFlight** and select the new version and build number. If it shows **Missing Compliance**, answer the export-compliance question and save. For **0.3.0 (3)**, the owner selected **None of the above**. Answer for the encryption used by the build being delivered.
+
+GitHub can show **Delivered** while the iPhone still shows the previous build. Once the build is available to the **Owner** internal group, open TestFlight on the iPhone and tap **Update**. Verify the version and build number before testing.
