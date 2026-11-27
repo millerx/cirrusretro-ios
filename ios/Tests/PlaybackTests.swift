@@ -226,6 +226,74 @@ final class PlaybackTests: XCTestCase {
         }
     }
 
+    func testOpeningThePlayingLibraryTrackKeepsItsAudioAndHistory() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = MusicLibrary(applicationSupport: root)
+        let pair = try library.add(fixture(), fileName: "pair.nsf").recording
+        let pulse = try library.add(fixture(ext: "spc"), fileName: "pulse.spc").recording
+        let player = LibraryPlayer()
+        try player.playback.queue.sync {
+            defer { player.playback.shutdown() }
+            try player.play(pair, track: 1)
+            player.enqueue(pulse, track: 0)
+            let queued = player.upcoming.map(\.id)
+            let remaining = player.playback.remaining
+
+            // The active emulator already owns the music. Opening Playback
+            // from Library must work even if reopening its media would fail.
+            let moved = root.appendingPathComponent("held.nsf")
+            try FileManager.default.moveItem(at: pair.url, to: moved)
+            try player.play(pair, track: 1)
+            XCTAssertTrue(player.snapshot.isPlaying(recordingID: pair.id, track: 1))
+            XCTAssertEqual(player.playback.remaining, remaining)
+            XCTAssertFalse(player.snapshot.hasPrevious)
+            XCTAssertEqual(player.upcoming.map(\.id), queued)
+
+            try FileManager.default.moveItem(at: moved, to: pair.url)
+            try player.play(pair, track: 0)
+            XCTAssertTrue(player.snapshot.isPlaying(recordingID: pair.id, track: 0))
+            try player.play(pulse, track: 0)
+            XCTAssertTrue(player.snapshot.isPlaying(recordingID: pulse.id, track: 0))
+        }
+    }
+
+    @MainActor
+    func testNowPlayingTransportIsRegisteredBeforePlayback() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = MusicLibrary(applicationSupport: root)
+        let item = try library.add(fixture(), fileName: "pair.nsf").recording
+        let player = LibraryPlayer()
+        let media = SystemMedia()
+        media.connect(to: player)
+        defer { player.playback.queue.sync { player.playback.shutdown() } }
+        let commands = MPRemoteCommandCenter.shared()
+        let info = MPNowPlayingInfoCenter.default()
+        media.update(player.snapshot)
+        XCTAssertTrue(commands.playCommand.isEnabled)
+        XCTAssertTrue(commands.pauseCommand.isEnabled)
+        XCTAssertTrue(commands.togglePlayPauseCommand.isEnabled)
+        XCTAssertFalse(commands.nextTrackCommand.isEnabled)
+        XCTAssertNil(info.nowPlayingInfo?[MPMediaItemPropertyTitle])
+
+        let playing = try player.playback.queue.sync {
+            try player.play(item, track: 0)
+            return player.snapshot
+        }
+        media.update(playing)
+        XCTAssertEqual(info.nowPlayingInfo?[MPMediaItemPropertyTitle] as? String, "Pulse pair · Track 1")
+        XCTAssertEqual(info.nowPlayingInfo?[MPNowPlayingInfoPropertyPlaybackRate] as? Double, 1)
+        XCTAssertTrue(commands.nextTrackCommand.isEnabled)
+        let paused = player.playback.queue.sync {
+            player.playback.pause()
+            return player.snapshot
+        }
+        media.update(paused)
+        XCTAssertEqual(info.nowPlayingInfo?[MPNowPlayingInfoPropertyPlaybackRate] as? Double, 0)
+        XCTAssertTrue(commands.playCommand.isEnabled)
+    }
+
     func testSystemControlsFollowQueueMetadataAndLibraryIndicator() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

@@ -123,7 +123,7 @@ private struct RecordingView: View {
                                         .frame(minHeight: 44)
                                 }
                                 .buttonStyle(.borderless)
-                                .accessibilityLabel("Play track \(track + 1)")
+                                .accessibilityLabel(isPlaying ? "Show playback for track \(track + 1)" : "Play track \(track + 1)")
                                 .accessibilityValue(isPlaying ? "Playing" : "")
                                 Spacer()
                                 Button {

@@ -77,6 +77,7 @@ final class LibraryPlayer {
     }
 
     func play(_ item: Recording, track: Int) throws {
+        guard !snapshot.isPlaying(recordingID: item.id, track: track) else { return }
         let previous = playback.hasPlayedSelection ? currentTrack : nil
         try start(item, track: track)
         if let previous { history.append(previous) }
