@@ -5,8 +5,8 @@ cd "$(dirname "$0")/.."
 archive=${1:?usage: archive-ios ARCHIVE_PATH BUILD_NUMBER}
 build_number=${2:?missing build number}
 sdk=$(xcrun --sdk iphoneos --show-sdk-version)
-if (( ${sdk%%.*} < 26 )); then
-  echo "App Store Connect requires the iOS 26 SDK or newer" >&2
+if (( ${sdk%%.*} < 27 )); then
+  echo "The personal TestFlight archive requires the iOS 27 SDK or newer" >&2
   exit 1
 fi
 # Refuse a toolchain that cannot restrict the binary to internal TestFlight.

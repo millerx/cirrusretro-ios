@@ -13,7 +13,7 @@ concurrency:
 jobs:
   deliver:
     if: github.repository == 'millerx/cirrusretro-ios' && github.event.repository.private == false
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 35
     environment: owner-testflight
     steps:

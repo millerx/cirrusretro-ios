@@ -46,4 +46,5 @@ Owner reports successful TestFlight installation and playback of two tracks from
 - Consider additional formats, playlists, channel controls and visualizations after MVP stability.
 
 ## Maintenance backlog
-- Apple delivery warning ITMS-90725 for 0.2 build 2: iOS 27 SDK / Xcode 27 or later required for App Store Connect uploads starting April 2027, per owner-provided Apple email. Target February 2027 or earlier when stable hosted tooling is available; preserve deployment target and run regression tests.
+- Milestone 3A moves the unsigned archive, iPhone simulator tests and owner upload to the standard ARM64 `xcode-27` runner, with an archive check for iOS 16.0. Confirm the next personal upload clears the warning.
+- Apple delivery warning ITMS-90725 for 0.2 build 2: iOS 27 SDK / Xcode 27 or later required for App Store Connect uploads starting April 2027, per owner-provided Apple email. Follow up by February 2027 if the next upload still warns.

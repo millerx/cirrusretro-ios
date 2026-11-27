@@ -16,11 +16,11 @@ def spc():
     snapshot[0xb1:0xbc] = b"Cirrus test"
     ram = memoryview(snapshot)[0x100:0x10100]
     ram[0x200:0x202] = b"\x2f\xfe"  # BRA to self
-    struct.pack_into("<HH", ram, 0x300, 0x400, 0x400)  # source 0 start/loop
+    struct.pack_into("<HH", ram, 0x0000, 0x400, 0x400)  # directory page FF + source 64 wraps to zero
     ram[0x400:0x409] = bytes([0xb3] + [0x44] * 4 + [0xcc] * 4)
     dsp = memoryview(snapshot)[0x10100:]
-    for reg, value in {0: 90, 1: 90, 2: 0, 3: 4, 7: 127, 0x0c: 90,
-                       0x1c: 90, 0x5d: 3, 0x6c: 0x20, 0x4c: 1}.items():
+    for reg, value in {0: 90, 1: 90, 2: 0, 3: 4, 4: 64, 7: 127, 0x0c: 90,
+                       0x1c: 90, 0x5d: 0xff, 0x6c: 0x20, 0x4c: 1}.items():
         dsp[reg] = value
     return snapshot
 
