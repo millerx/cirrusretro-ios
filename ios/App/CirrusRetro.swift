@@ -117,14 +117,13 @@ private struct RecordingView: View {
                 if item.available {
                     Section("Tracks") {
                         ForEach(0..<metadata.trackCount, id: \.self) { track in
-                            let selected = model.player.recording?.id == item.id
-                                && model.player.playback.track == track
+                            let isPlaying = model.player.isPlaying(recordingID: item.id, track: track)
                             HStack {
                                 Button {
                                     model.play(item, track: track)
                                     showPlayback()
                                 } label: {
-                                    Label("Track \(track + 1)", systemImage: selected ? "speaker.wave.2" : "play")
+                                    Label("Track \(track + 1)", systemImage: isPlaying ? "speaker.wave.2" : "play")
                                 }
                                 .buttonStyle(.borderless)
                                 Spacer()

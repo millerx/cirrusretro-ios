@@ -12,6 +12,10 @@ struct PlayerSnapshot {
     var recording: Recording?
     var upcoming: [QueuedTrack] = []
     var message: String?
+
+    func isPlaying(recordingID: Recording.ID, track: Int) -> Bool {
+        playback.transport == .playing && recording?.id == recordingID && playback.track == track
+    }
 }
 
 // Selection, queue mutations and automatic progression share the playback

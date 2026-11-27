@@ -65,6 +65,27 @@ final class PlaybackTests: XCTestCase {
         }
     }
 
+    func testLibraryTrackIndicatorRequiresActivePlayback() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = MusicLibrary(applicationSupport: root)
+        let recording = try library.add(fixture(), fileName: "pulse.nsf").recording
+        let other = try library.add(fixture(ext: "spc"), fileName: "pulse.spc").recording
+        let track = recording.metadata.defaultTrack
+        var snapshot = PlayerSnapshot(recording: recording)
+        snapshot.playback.track = track
+
+        XCTAssertFalse(snapshot.isPlaying(recordingID: recording.id, track: track))
+        snapshot.playback.transport = .playing
+        XCTAssertTrue(snapshot.isPlaying(recordingID: recording.id, track: track))
+        XCTAssertFalse(snapshot.isPlaying(recordingID: recording.id, track: 0))
+        XCTAssertFalse(snapshot.isPlaying(recordingID: other.id, track: track))
+        snapshot.playback.transport = .paused
+        XCTAssertFalse(snapshot.isPlaying(recordingID: recording.id, track: track))
+        snapshot.playback.transport = .stopped
+        XCTAssertFalse(snapshot.isPlaying(recordingID: recording.id, track: track))
+    }
+
     func testLibraryMigratesEachLegacyFormatAndSurvivesReopening() throws {
         for ext in ["nsf", "spc", "vgm"] {
             let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
