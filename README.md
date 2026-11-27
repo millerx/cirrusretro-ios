@@ -46,9 +46,9 @@ Milestone 2 is merged; the owner confirmed TestFlight installation and playback 
 
 In Library, tap **+** to import one or more NSF, SPC or supported VGM files from Files. The app saves local copies for offline use and detects duplicates by file contents. Existing installations automatically bring their previous saved recording into the library. Search by title, artist, copyright, filename or format. Open a recording to play a track or add it to the queue. In Playback, use **Play Next** to start the queue or skip ahead. Tracks also advance automatically when playback finishes. The queue lasts for the current app session. Swipe a recording in Library to remove the app’s copy and its queued tracks. See the [supported formats, dependency audit and personal iPhone checks](docs/milestone-3a.md). The hosted macOS workflow builds for device and runs simulator tests without Apple signing credentials. See the [native build, playback design and personal installation guide](docs/milestone-2.md).
 
-### Manual steps for a personal TestFlight build
+### Personal TestFlight delivery
 
-1. In GitHub Actions, open the **Owner TestFlight** run. Confirm the commit matches the reviewed revision and that only the owner will receive the build. Select **Review deployments → owner-testflight → Approve and deploy**. The workflow then signs and uploads the app.
+1. Complete the [owner-only automation setup](docs/milestone-2.md#deliver-the-authorized-owner-only-testflight-build). Pushing a new delivery tag requests verification, signing and internal-only upload. If the environment still requires owner review, open **Owner TestFlight → Review deployments → owner-testflight → Approve and deploy** after the verification job passes.
 2. After Apple processes the upload, open **App Store Connect → Apps → Cirrus Retro → TestFlight** and select the new version and build number. If it shows **Missing Compliance**, answer the export-compliance question and save. For **0.3.0 (3)**, the owner selected **None of the above**. Answer for the encryption used by the build being delivered.
 
 GitHub can show **Delivered** while the iPhone still shows the previous build. Once the build is available to the **Owner** internal group, open TestFlight on the iPhone and tap **Update**. Verify the version and build number before testing.

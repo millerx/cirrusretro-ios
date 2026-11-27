@@ -1,0 +1,12 @@
+name: Owner TestFlight request
+on:
+  push:
+    tags: ['owner-testflight-*']
+
+permissions: {}
+jobs:
+  request:
+    if: github.event.created && !github.event.deleted && github.actor_id == '1734980'
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "Requested verification of the delivery tag."

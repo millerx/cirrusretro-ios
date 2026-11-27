@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+"""Read-only eligibility check. Run from the trusted workflow checkout."""
+import argparse
+import hashlib
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+REPO = "millerx/cirrusretro-ios"
+CODEX_ID = 199175422
+ROOT = Path(__file__).resolve().parents[1]
+JOBS = {"linux.yml": {"linux (Release)", "linux (Sanitizers)"}, "ios.yml": {"native"}}
+
+
+class Rejected(Exception):
+    pass
+
+
+def require(condition, reason):
+    if not condition:
+        raise Rejected(reason)
+
+
+def api(path):
+    data = subprocess.check_output(["gh", "api", f"repos/{REPO}/{path}"])
+    return json.loads(data)
+
+
+def items(path, field=None):
+    separator = "&" if "?" in path else "?"
+    page = 1
+    while True:
+        data = api(f"{path}{separator}per_page=100&page={page}")
+        batch = data[field] if field else data
+        yield from batch
+        if len(batch) < 100:
+            return
+        page += 1
+
+
+def verify_reviews(number, sha):
+    commits = {c["sha"] for c in items(f"pulls/{number}/commits")}
+    comments = list(items(f"issues/{number}/comments"))
+    reviews = list(items(f"pulls/{number}/reviews"))
+    receipts = []
+    summaries = []
+    for entry in comments + reviews:
+        if entry["user"]["id"] != CODEX_ID or entry["user"]["type"] != "Bot":
+            continue
+        body = entry["body"] or ""
+        if body.startswith("<!-- codex-pull-request-review-summary -->"):
+            state = re.search(r"^<!-- codex-review-state:v1 (.+) -->$", body, re.M)
+            if state:
+                summaries.append(json.loads(state[1])["code_review"])
+        if not body.startswith("<!-- codex-review-receipt:v1 -->"):
+            continue
+        match = re.search(r"^\*\*Reviewed commit:\*\* `([0-9a-f]{10,40})`\s*$", body, re.M)
+        if not match:
+            continue
+        matches = [c for c in commits if c.startswith(match[1])]
+        if len(matches) == 1 and entry.get("commit_id", matches[0]) == matches[0]:
+            receipts.append((entry.get("submitted_at") or entry["created_at"], matches[0], entry["html_url"]))
+    receipts.sort()
+    require(len(receipts) >= 2 and receipts[-1][1] == sha and receipts[-2][0] < receipts[-1][0],
+            "two distinct native Codex review passes ending at this head are required")
+    require(len(summaries) == 1 and summaries[0]["commit_sha"] == sha
+            and summaries[0]["status"] == "completed" and summaries[0]["has_unresolved_findings"] is False,
+            "a completed Codex verdict with no unresolved findings is required on this head")
+    for _, commit, url in receipts[-2:]:
+        print(f"Review {commit}: {url}")
+
+
+def verify_ci(pr, sha):
+    runs = list(items(f"actions/runs?event=pull_request&head_sha={sha}", "workflow_runs"))
+    for filename, expected in JOBS.items():
+        path = f".github/workflows/{filename}"
+        # The candidate cannot replace the required CI jobs with no-ops.
+        blob = (ROOT / path).read_bytes()
+        trusted = hashlib.sha1(b"blob " + str(len(blob)).encode() + b"\0" + blob).hexdigest()
+        require(api(f"contents/{path}?ref={sha}")["sha"] == trusted, f"untrusted CI definition: {path}")
+        eligible = [r for r in runs if r["path"] == path and r["event"] == "pull_request"
+                    and r["head_sha"] == sha and r["head_repository"]["full_name"] == REPO
+                    and any(p["number"] == pr["number"] and p["head"]["sha"] == sha
+                            and p["base"]["ref"] == "main" for p in r["pull_requests"])]
+        require(eligible, f"missing PR run for {path}")
+        run = max(eligible, key=lambda r: r["run_number"])
+        require(run["status"] == "completed" and run["conclusion"] == "success", f"CI pending or failed: {path}")
+        jobs = list(items(f"actions/runs/{run['id']}/jobs?filter=latest", "jobs"))
+        require({j["name"] for j in jobs if j["status"] == "completed" and j["conclusion"] == "success"}
+                == expected and len(jobs) == len(expected), f"required jobs did not all pass: {path}")
+        print(f"{', '.join(sorted(expected))}: {run['html_url']}")
+
+
+def verify(sha, tag=None):
+    require(re.fullmatch("[a-f0-9]{40}", sha), "expected full commit SHA")
+    if tag is not None:
+        require(re.fullmatch("owner-testflight-[A-Za-z0-9._-]+", tag), "invalid delivery tag")
+        target = api(f"git/ref/tags/{tag}")["object"]
+        require(target["type"] == "commit" and target["sha"] == sha, "delivery tag must point directly at this SHA")
+    prs = [p for p in items(f"commits/{sha}/pulls") if p["state"] == "open"
+           and p["base"]["ref"] == "main" and p["base"]["repo"]["full_name"] == REPO
+           and p["head"]["sha"] == sha and p["head"]["repo"]["full_name"] == REPO and not p["draft"]]
+    require(len(prs) == 1, "expected one open same-repository PR to main with this exact head")
+    pr = prs[0]
+    verify_reviews(pr["number"], sha)
+    verify_ci(pr, sha)
+    print(f"PASS {sha} PR #{pr['number']}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("sha")
+    parser.add_argument("--tag")
+    args = parser.parse_args()
+    try:
+        verify(args.sha, args.tag)
+    except Rejected as exc:
+        sys.exit(f"REJECT {args.sha}: {exc}")
