@@ -1,6 +1,6 @@
 # Roadmap
 
-The primary objective is personal installation and ongoing use on the owner's iPhone and iPad. Limited sharing with a friend through TestFlight is optional. Public App Store release and monetization are out of scope. Prefer a sustainable remote signing and installation workflow; account for provisioning and beta expiration. Public source visibility does not waive dependency licenses; review obligations for any binary sharing, including TestFlight.
+The primary objective is personal installation and ongoing use on the owner's iPhone. Limited sharing with a friend through TestFlight is optional. Public App Store release and monetization are out of scope. Prefer a sustainable remote signing and installation workflow; account for provisioning and beta expiration. Public source visibility does not waive dependency licenses; review obligations for any binary sharing, including TestFlight.
 
 ## 1. Feasibility and portable NSF prototype (complete)
 - Audit upstream engines, dependency versions, licenses and native portability; document potential distribution constraints.
@@ -18,17 +18,22 @@ Milestone 1 merged via PR #1. Independent review and Linux CI passed; subjective
 - Document supported triggers, quota handling, security boundaries, exception escalation and any unavoidable manual steps.
 - Acceptance: demonstrate a safe, low-overhead workflow where feasible; otherwise document the minimal manual fallback. Do not build a bespoke orchestration platform or start native iOS work in this milestone.
 
-## 2. Native iOS playback (in progress)
+## 2. Native iOS playback (complete)
 - Package the core for iOS device and simulator; create a minimal SwiftUI player and Files import.
 - Integrate AVAudioEngine and bounded buffering; test start, pause, stop, track selection and errors.
-- Acceptance: hosted macOS build and simulator tests pass; physical iPhone/iPad playback verified by owner.
+- Acceptance: hosted macOS build and simulator tests pass; physical iPhone playback verified by owner.
+
+Owner reports successful TestFlight installation and playback of two tracks from a sample NSF on physical iPhone (version 0.2, build 2 delivered). Milestone 2 merged.
 
 ## 3. Music player MVP
-- Add SPC and VGM after individual audits; local library, metadata, playback queue and universal layouts.
+- Add SPC and VGM after individual audits; local library, metadata, playback queue and iPhone layouts.
 - Add background playback, lock-screen controls, interruption and route handling.
-- Acceptance: offline playback, stable background behavior and device testing on iPhone and iPad.
+- Acceptance: offline playback, stable background behavior and device testing on iPhone.
 
 ## 4. Beta and expansion
 - Establish sustainable personal installation and signing via hosted macOS CI; optionally configure limited TestFlight sharing after licensing review. Evaluate battery, memory, audio fidelity and accessibility.
 - Review licensing, attribution and naming before any external binary sharing; public App Store release is not planned.
 - Consider additional formats, playlists, channel controls and visualizations after MVP stability.
+
+## Maintenance backlog
+- Apple delivery warning ITMS-90725 for 0.2 build 2: iOS 27 SDK / Xcode 27 or later required for App Store Connect uploads starting April 2027, per owner-provided Apple email. Target February 2027 or earlier when stable hosted tooling is available; preserve deployment target and run regression tests.
