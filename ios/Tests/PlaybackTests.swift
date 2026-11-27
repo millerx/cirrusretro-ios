@@ -3,9 +3,9 @@ import XCTest
 @testable import CirrusRetro
 
 final class PlaybackTests: XCTestCase {
-    private func fixture(_ name: String = "pulse") throws -> Data {
-        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: name, withExtension: "nsf"))
-        return try NSFImport.read(url)
+    private func fixture(_ name: String = "pulse", ext: String = "nsf") throws -> Data {
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: name, withExtension: ext))
+        return try MusicImport.read(url)
     }
 
     func testTransportImportAndRecovery() throws {
@@ -16,7 +16,7 @@ final class PlaybackTests: XCTestCase {
             defer { try? FileManager.default.removeItem(at: saved) }
             let data = try fixture()
             try player.load(data, saveTo: saved)
-            XCTAssertEqual(try NSFImport.fromFiles(saved), data)
+            XCTAssertEqual(try MusicImport.fromFiles(saved), data)
             XCTAssertEqual(player.state.title, "Pulse pair")
             XCTAssertEqual(player.state.artist, "Cirrus Retro test")
             XCTAssertEqual(player.state.copyright, "Synthetic fixture")
@@ -31,7 +31,7 @@ final class PlaybackTests: XCTestCase {
             XCTAssertEqual(player.state.track, 0)
             XCTAssertEqual(player.state.transport, .playing)
             XCTAssertThrowsError(try player.load(Data([0]), saveTo: saved))
-            XCTAssertEqual(try NSFImport.read(saved), data)
+            XCTAssertEqual(try MusicImport.read(saved), data)
             XCTAssertEqual(player.state.transport, .playing)
             player.stop()
             XCTAssertEqual(player.state.transport, .stopped)
@@ -41,6 +41,45 @@ final class PlaybackTests: XCTestCase {
             try player.select(0)
             try player.play()
         }
+    }
+
+    func testReplaceSavedMusicAcrossFormats() throws {
+        let player = Playback()
+        let saved = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: saved) }
+        try player.queue.sync {
+            defer { player.shutdown() }
+            for (ext, title) in [("spc", "BRR pulse"), ("vgm", "PSG pulse"), ("nsf", "Pulse pair")] {
+                let data = try fixture(ext: ext)
+                try player.load(data, saveTo: saved)
+                try player.play()
+                player.pause()
+                XCTAssertThrowsError(try player.load(Data(data.prefix(32)), saveTo: saved))
+                XCTAssertEqual(player.state.transport, .paused)
+                XCTAssertEqual(try MusicImport.fromFiles(saved), data)
+                try player.play()
+                player.shutdown()
+                try player.load(MusicImport.read(saved))
+                XCTAssertEqual(player.state.title, title)
+            }
+        }
+    }
+
+    func testFiniteVGMDrainsAndStops() throws {
+        let player = Playback()
+        let stopped = expectation(description: "finite VGM reached end")
+        defer { player.queue.sync { player.shutdown() } }
+        try player.queue.sync {
+            player.notify = { state in
+                XCTAssertNil(state.error)
+                XCTAssertEqual(state.transport, .stopped)
+                stopped.fulfill()
+            }
+            try player.load(fixture(ext: "vgm"))
+            try player.play()
+        }
+        wait(for: [stopped], timeout: 6)
+        player.queue.sync { XCTAssertEqual(player.remaining, 0) }
     }
 
     func testLiveProducerRefillsBeyondRingCapacity() throws {
@@ -54,7 +93,7 @@ final class PlaybackTests: XCTestCase {
         let probe = DispatchSource.makeTimerSource(queue: player.queue)
         probe.schedule(deadline: .now(), repeating: .milliseconds(20))
         probe.setEventHandler {
-            if Int(CR_NSF_MAX_TRACK_FRAMES) - player.remaining > Int(CR_QUEUE_FRAMES) {
+            if Int(CR_MUSIC_MAX_TRACK_FRAMES) - player.remaining > Int(CR_QUEUE_FRAMES) {
                 probe.cancel()
                 refilled.fulfill()
             }
@@ -68,7 +107,7 @@ final class PlaybackTests: XCTestCase {
             try player.play()
             XCTAssertEqual(player.remaining, paused)
             try player.select(0)
-            XCTAssertEqual(player.remaining, Int(CR_NSF_MAX_TRACK_FRAMES - CR_BLOCK_FRAMES))
+            XCTAssertEqual(player.remaining, Int(CR_MUSIC_MAX_TRACK_FRAMES - CR_BLOCK_FRAMES))
             player.stop()
             XCTAssertEqual(player.state.transport, .stopped)
         }
@@ -79,15 +118,15 @@ final class PlaybackTests: XCTestCase {
         data[110] = 1 // One microsecond NTSC play period.
         data[111] = 0
         var handle: OpaquePointer?
-        defer { cr_nsf_close(handle) }
+        defer { cr_music_close(handle) }
         let error = data.withUnsafeBytes {
-            cr_nsf_open($0.bindMemory(to: UInt8.self).baseAddress, $0.count, &handle)
+            cr_music_open($0.bindMemory(to: UInt8.self).baseAddress, $0.count, &handle)
         }
         XCTAssertNil(error)
-        XCTAssertNil(cr_nsf_select(handle, 0))
-        var pcm = [Int16](repeating: 0, count: Int(CR_BLOCK_FRAMES * CR_NSF_CHANNELS))
+        XCTAssertNil(cr_music_select(handle, 0))
+        var pcm = [Int16](repeating: 0, count: Int(CR_BLOCK_FRAMES * CR_MUSIC_CHANNELS))
         let start = DispatchTime.now().uptimeNanoseconds
-        XCTAssertNotNil(cr_nsf_render(handle, &pcm, Int(CR_BLOCK_FRAMES)))
+        XCTAssertNotNil(cr_music_render(handle, &pcm, Int(CR_BLOCK_FRAMES)))
         let elapsed = DispatchTime.now().uptimeNanoseconds - start
         print("Guest work-limit rejection in \(Double(elapsed) / 1_000_000) ms")
         XCTAssertLessThan(elapsed, 1_000_000_000)
@@ -96,29 +135,34 @@ final class PlaybackTests: XCTestCase {
     func testFileSizeLimit() throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: file) }
-        try Data(count: Int(CR_NSF_MAX_BYTES) + 1).write(to: file)
-        XCTAssertThrowsError(try NSFImport.read(file))
+        try Data(count: Int(CR_MUSIC_MAX_BYTES) + 1).write(to: file)
+        XCTAssertThrowsError(try MusicImport.read(file))
     }
 
     func testEmulatorThroughSourceNode() throws {
-        let data = try fixture()
-        var nsf: OpaquePointer?
-        defer { cr_nsf_close(nsf) }
-        let error = data.withUnsafeBytes { cr_nsf_open($0.bindMemory(to: UInt8.self).baseAddress, $0.count, &nsf) }
-        XCTAssertNil(error)
         let output = CRAudioOutput()
         let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 2))
         try output.engine.enableManualRenderingMode(.offline, format: format, maximumFrameCount: 512)
         try output.engine.start()
         defer { output.engine.stop() }
         let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 512))
-        for track in 0..<2 {
-            XCTAssertNil(cr_nsf_select(nsf, UInt32(track)))
+        let tones: [(String, UInt32, Double)] = [
+            ("nsf", 0, 440), ("nsf", 1, 881), ("spc", 0, 500), ("vgm", 0, 499)
+        ]
+        for (ext, track, pitch) in tones {
+            let data = try fixture(ext: ext)
+            var music: OpaquePointer?
+            let error = data.withUnsafeBytes {
+                cr_music_open($0.bindMemory(to: UInt8.self).baseAddress, $0.count, &music)
+            }
+            XCTAssertNil(error)
+            defer { cr_music_close(music) }
+            XCTAssertNil(cr_music_select(music, track))
             var crossings = 0
             var previous: Float = 0
             var samples = [Int16](repeating: 0, count: 1024)
             for _ in 0..<86 {
-                XCTAssertNil(cr_nsf_render(nsf, &samples, 512))
+                XCTAssertNil(cr_music_render(music, &samples, 512))
                 output.write(samples, frames: 512)
                 XCTAssertEqual(try output.engine.renderOffline(512, to: buffer), .success)
                 XCTAssertEqual(buffer.frameLength, 512)
@@ -128,7 +172,7 @@ final class PlaybackTests: XCTestCase {
                     previous = left[index]
                 }
             }
-            XCTAssertEqual(Double(crossings), track == 0 ? 440 : 881, accuracy: 15)
+            XCTAssertEqual(Double(crossings), pitch, accuracy: 15)
         }
         XCTAssertEqual(try output.engine.renderOffline(512, to: buffer), .success)
         let planes = try XCTUnwrap(buffer.floatChannelData)

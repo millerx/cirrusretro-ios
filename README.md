@@ -17,7 +17,7 @@ The primary objective is personal installation and ongoing use on the owner's iP
 
 ## Direction
 
-Native SwiftUI for iPhone; portable C/C++ emulation behind a C API; AVAudioEngine playback; offline file import and library; eventual background playback and system media controls. Initial target: NSF, followed by SPC and VGM subject to feasibility and licensing.
+Native SwiftUI for iPhone; portable C/C++ emulation behind a C API; AVAudioEngine playback; offline file import and library; eventual background playback and system media controls. The player recognizes raw NSF, SPC and supported Sega VGM streams by their contents.
 
 Development is intended to use Codex Cloud, GitHub and hosted macOS CI, preferably Xcode Cloud for distribution. No backend is planned.
 
@@ -36,7 +36,7 @@ The tests generate an original two-track NSF. The last command renders its lower
 
 ## Status and licensing
 
-The portable prototype handles raw NSF v1 with the base NES APU. The project license awaits owner approval. The dependency audit permits private builds and personal device use with the patched engine. Sharing a binary with a friend through TestFlight requires a separate licensing review. Upstream components retain their licenses and notices. Use music or ROMs only with appropriate rights.
+The original CLI handles raw NSF v1 with the base NES APU. The portable music API and iPhone player also handle SPC and VGM. The project license awaits owner approval. The dependency audit permits private builds and personal device use with the patched engine. Sharing a binary with a friend through TestFlight requires a separate licensing review. Upstream components retain their licenses and notices. Use music or ROMs only with appropriate rights.
 
 See the [Milestone 1 audit, design and test record](docs/milestone-1.md), [roadmap](ROADMAP.md), [milestone workflow](docs/milestone-workflow.md) and [engineering instructions](AGENTS.md).
 
@@ -44,4 +44,4 @@ See the [Milestone 1 audit, design and test record](docs/milestone-1.md), [roadm
 
 Milestone 2 is merged; the owner confirmed TestFlight installation and playback of two NSF tracks on iPhone. iPad-specific development is deferred.
 
-The SwiftUI player imports an NSF from Files, saves it for offline playback and plays it through AVAudioEngine. The hosted macOS workflow builds for device and runs simulator tests without Apple signing credentials. See the [native build, playback design and personal installation guide](docs/milestone-2.md).
+The SwiftUI player imports one NSF, SPC or VGM from Files, saves it for offline playback and plays it through AVAudioEngine. Existing installations retain their saved NSF. See the [supported formats, dependency audit and personal iPhone checks](docs/milestone-3a.md). The hosted macOS workflow builds for device and runs simulator tests without Apple signing credentials. See the [native build, playback design and personal installation guide](docs/milestone-2.md).

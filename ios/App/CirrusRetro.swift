@@ -23,7 +23,7 @@ struct PlayerView: View {
             Form {
                 Section {
                     Button { choosing = true } label: {
-                        Label("Import NSF from Files", systemImage: "folder")
+                        Label("Import NSF, SPC or VGM from Files", systemImage: "folder")
                     }.disabled(model.importing)
                     if model.importing { ProgressView("Importing…") }
                 }

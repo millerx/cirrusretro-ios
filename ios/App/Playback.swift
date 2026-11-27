@@ -27,7 +27,8 @@ final class Playback {
     private var handle: OpaquePointer?
     private var output: CRAudioOutput?
     private var timer: DispatchSourceTimer?
-    private var pcm = [Int16](repeating: 0, count: Int(CR_BLOCK_FRAMES * CR_NSF_CHANNELS))
+    private var pcm = [Int16](repeating: 0, count: Int(CR_BLOCK_FRAMES * CR_MUSIC_CHANNELS))
+    private var frameLimit = 0
     private(set) var remaining = 0
     var notify: ((PlaybackState) -> Void)?
 
@@ -35,18 +36,19 @@ final class Playback {
     func load(_ data: Data, saveTo url: URL? = nil) throws {
         var candidate: OpaquePointer?
         try data.withUnsafeBytes {
-            try check(cr_nsf_open($0.bindMemory(to: UInt8.self).baseAddress, $0.count, &candidate))
+            try check(cr_music_open($0.bindMemory(to: UInt8.self).baseAddress, $0.count, &candidate))
         }
-        defer { cr_nsf_close(candidate) }
-        var info = cr_nsf_info()
-        try check(cr_nsf_get_info(candidate, &info))
-        try check(cr_nsf_select(candidate, info.default_track))
+        defer { cr_music_close(candidate) }
+        var info = cr_music_info()
+        try check(cr_music_get_info(candidate, &info))
+        try check(cr_music_select(candidate, info.default_track))
         if let url {
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
                                                     withIntermediateDirectories: true)
             try data.write(to: url, options: .atomic)
         }
         shutdown()
+        frameLimit = Int(info.frame_limit)
         handle = candidate
         candidate = nil
         func label<T>(_ field: inout T) -> String {
@@ -76,7 +78,7 @@ final class Playback {
 
     func shutdown() {
         releaseOutput()
-        cr_nsf_close(handle)
+        cr_music_close(handle)
         handle = nil
         state = PlaybackState()
     }
@@ -100,21 +102,21 @@ final class Playback {
     private func produce(into output: CRAudioOutput) throws {
         let frames = min(Int(CR_BLOCK_FRAMES), remaining)
         guard frames > 0, output.freeFrames >= frames else { return }
-        try check(cr_nsf_render(handle, &pcm, frames))
+        try check(cr_music_render(handle, &pcm, frames))
         pcm.withUnsafeBufferPointer { output.write($0.baseAddress!, frames: UInt32(frames)) }
         remaining -= frames
     }
 
     func play() throws {
-        guard handle != nil else { throw PlayerFailure("Import an NSF first") }
+        guard handle != nil else { throw PlayerFailure("Import an NSF, SPC or VGM first") }
         guard state.transport != .playing else { return }
         do {
             let audio: CRAudioOutput
             if let output {
                 audio = output // Resume with buffered frames and guest position intact.
             } else {
-                try check(cr_nsf_select(handle, UInt32(state.track)))
-                remaining = Int(CR_NSF_MAX_TRACK_FRAMES)
+                try check(cr_music_select(handle, UInt32(state.track)))
+                remaining = frameLimit
                 audio = CRAudioOutput()
                 output = audio
                 try produce(into: audio)
