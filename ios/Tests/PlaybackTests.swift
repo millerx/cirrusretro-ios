@@ -362,7 +362,7 @@ final class PlaybackTests: XCTestCase {
         for ext in ["nsf", "spc"] {
             let output = CRAudioOutput()
             let player = Playback { output }
-            try player.queue.sync {
+            try player.queue.sync { () throws -> Void in
                 defer { player.shutdown() }
                 try output.engine.enableManualRenderingMode(.offline, format: format, maximumFrameCount: frames)
                 let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames))
@@ -372,12 +372,12 @@ final class PlaybackTests: XCTestCase {
                 // Alternate single and double pulls before allowing its next wake.
                 for wake in 0..<8 {
                     for _ in 0..<(1 + wake % 2) {
-                        let before = output.freeFrames
+                        let before = Int(output.freeFrames)
                         XCTAssertEqual(try output.engine.renderOffline(frames, to: buffer), .success)
                         XCTAssertEqual(buffer.frameLength, frames)
-                        XCTAssertEqual(output.freeFrames - before, Int(frames), "Every frame must come from the ring")
+                        XCTAssertEqual(Int(output.freeFrames) - before, Int(frames), "Every frame must come from the ring")
                     }
-                    let consumed = output.freeFrames
+                    let consumed = Int(output.freeFrames)
                     let previous = player.remaining
                     player.tick()
                     XCTAssertEqual(previous - player.remaining, consumed)
