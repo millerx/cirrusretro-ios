@@ -1,6 +1,6 @@
 # Cirrus Retro for iOS
 
-An independent, native iPhone and iPad retro game music player inspired by Multimedia Mike's Cirrus Retro project. The goal is to play original game-music formats through emulation rather than prerecorded audio, entirely on device.
+An independent, native iPhone retro game music player inspired by Multimedia Mike's Cirrus Retro project. The goal is to play original game-music formats through emulation rather than prerecorded audio, entirely on device.
 
 ## Heritage and attribution
 
@@ -13,11 +13,11 @@ This project honors Multimedia Mike and the original Cirrus Retro project. It is
 
 ## Distribution objectives
 
-The primary objective is personal installation and ongoing use on the owner's iPhone and iPad. Limited sharing with a friend through TestFlight is optional. Public App Store release and monetization are out of scope. Prefer a sustainable remote signing and installation workflow; account for provisioning and beta expiration. Public source visibility does not waive dependency licenses; review obligations for any binary sharing, including TestFlight.
+The primary objective is personal installation and ongoing use on the owner's iPhone. Limited sharing with a friend through TestFlight is optional. Public App Store release and monetization are out of scope. Prefer a sustainable remote signing and installation workflow; account for provisioning and beta expiration. Public source visibility does not waive dependency licenses; review obligations for any binary sharing, including TestFlight.
 
 ## Direction
 
-Native SwiftUI for iPhone and iPad; portable C/C++ emulation behind a C API; AVAudioEngine playback; offline file import and library; eventual background playback and system media controls. Initial target: NSF, followed by SPC and VGM subject to feasibility and licensing.
+Native SwiftUI for iPhone; portable C/C++ emulation behind a C API; AVAudioEngine playback; offline file import and library; eventual background playback and system media controls. Initial target: NSF, followed by SPC and VGM subject to feasibility and licensing.
 
 Development is intended to use Codex Cloud, GitHub and hosted macOS CI, preferably Xcode Cloud for distribution. No backend is planned.
 
@@ -40,6 +40,8 @@ The portable prototype handles raw NSF v1 with the base NES APU. The project lic
 
 See the [Milestone 1 audit, design and test record](docs/milestone-1.md), [roadmap](ROADMAP.md), [milestone workflow](docs/milestone-workflow.md) and [engineering instructions](AGENTS.md).
 
-## Native iPhone and iPad player
+## Native iPhone player
+
+Milestone 2 is merged; the owner confirmed TestFlight installation and playback of two NSF tracks on iPhone. iPad-specific development is deferred.
 
 The SwiftUI player imports an NSF from Files, saves it for offline playback and plays it through AVAudioEngine. The hosted macOS workflow builds for device and runs simulator tests without Apple signing credentials. See the [native build, playback design and personal installation guide](docs/milestone-2.md).
