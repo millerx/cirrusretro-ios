@@ -32,16 +32,35 @@ final class Playback {
     private(set) var remaining = 0
     var notify: ((PlaybackState) -> Void)?
 
-    // Preserve the current selection/output if a replacement fails validation or saving.
-    func load(_ data: Data, saveTo url: URL? = nil) throws {
+    private static func open(_ data: Data) throws -> OpaquePointer {
         var candidate: OpaquePointer?
         try data.withUnsafeBytes {
             try check(cr_music_open($0.bindMemory(to: UInt8.self).baseAddress, $0.count, &candidate))
         }
+        guard let candidate else { throw PlayerFailure("Music could not be opened") }
+        return candidate
+    }
+
+    static func inspect(_ data: Data) throws -> MusicMetadata {
+        let candidate = try open(data)
         defer { cr_music_close(candidate) }
         var info = cr_music_info()
         try check(cr_music_get_info(candidate, &info))
         try check(cr_music_select(candidate, info.default_track))
+        return try MusicMetadata(info)
+    }
+
+    // Preserve the current selection/output if a replacement fails validation or saving.
+    func load(_ data: Data, saveTo url: URL? = nil, track: Int? = nil) throws {
+        let candidate = try Self.open(data)
+        var adopted = false
+        defer { if !adopted { cr_music_close(candidate) } }
+        var info = cr_music_info()
+        try check(cr_music_get_info(candidate, &info))
+        let metadata = try MusicMetadata(info)
+        let selectedTrack = track ?? metadata.defaultTrack
+        guard (0..<metadata.trackCount).contains(selectedTrack) else { throw PlayerFailure("Invalid track") }
+        try check(cr_music_select(candidate, UInt32(selectedTrack)))
         if let url {
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
                                                     withIntermediateDirectories: true)
@@ -50,17 +69,10 @@ final class Playback {
         shutdown()
         frameLimit = Int(info.frame_limit)
         handle = candidate
-        candidate = nil
-        func label<T>(_ field: inout T) -> String {
-            withUnsafeBytes(of: &field) { bytes in
-                let text = Data(bytes.prefix(while: { $0 != 0 }))
-                return String(data: text, encoding: .utf8)
-                    ?? String(data: text, encoding: .isoLatin1) ?? ""
-            }
-        }
-        state = PlaybackState(title: label(&info.title), artist: label(&info.artist),
-                              copyright: label(&info.copyright), track: Int(info.default_track),
-                              count: Int(info.track_count))
+        adopted = true
+        state = PlaybackState(title: metadata.title, artist: metadata.artist,
+                              copyright: metadata.copyright, track: selectedTrack,
+                              count: metadata.trackCount)
     }
 
     private func releaseOutput() {
@@ -110,6 +122,7 @@ final class Playback {
     func play() throws {
         guard handle != nil else { throw PlayerFailure("Import an NSF, SPC or VGM first") }
         guard state.transport != .playing else { return }
+        state.error = nil
         do {
             let audio: CRAudioOutput
             if let output {
