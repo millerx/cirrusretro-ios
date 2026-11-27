@@ -1,7 +1,8 @@
 name: Owner TestFlight
 on:
-  push:
-    tags: ['owner-testflight-*']
+  workflow_run:
+    workflows: ['Owner TestFlight request']
+    types: [completed]
 
 permissions:
   contents: read
@@ -10,19 +11,100 @@ concurrency:
   group: owner-testflight
   cancel-in-progress: false
 
+env:
+  TAG: ${{ github.event.workflow_run.head_branch }}
+  CANDIDATE: ${{ github.event.workflow_run.head_sha }}
+
 jobs:
-  deliver:
-    if: github.repository == 'millerx/cirrusretro-ios' && github.event.repository.private == false
-    runs-on: xcode-27
-    timeout-minutes: 35
-    environment: owner-testflight
+  verify:
+    if: >-
+      github.repository == 'millerx/cirrusretro-ios' && github.event.repository.private == false &&
+      github.ref == 'refs/heads/main' && github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.actor.id == 1734980 && github.event.workflow_run.run_attempt == 1 && github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.path == '.github/workflows/testflight-request.yml' &&
+      startsWith(github.event.workflow_run.head_branch, 'owner-testflight-')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+      - run: scripts/verify-testflight "$CANDIDATE" --tag "$TAG"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  archive:
+    needs: verify
+    outputs:
+      artifact: ${{ steps.upload.outputs.artifact-id }}
+    runs-on: xcode-27
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ env.CANDIDATE }}
+          persist-credentials: false
       - run: scripts/build-ios-core
       - run: scripts/archive-ios "$RUNNER_TEMP/CirrusRetro.xcarchive" "$GITHUB_RUN_NUMBER"
-      - name: Manually sign and upload for internal testing only
+      - run: tar -czf "$RUNNER_TEMP/archive.tar.gz" -C "$RUNNER_TEMP" CirrusRetro.xcarchive
+      - id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: archive-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/archive.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  deliver:
+    needs: archive
+    runs-on: xcode-27
+    timeout-minutes: 15
+    environment: owner-testflight
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          artifact-ids: ${{ needs.archive.outputs.artifact }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/delivery
+      - name: Unpack in isolation and check archived app identity
+        working-directory: ${{ runner.temp }}/delivery
+        run: |
+          python3 - <<'PY'
+          import tarfile
+          with tarfile.open('archive.tar.gz') as archive:
+              for member in archive:
+                  if not (member.name == 'CirrusRetro.xcarchive' or member.name.startswith('CirrusRetro.xcarchive/')):
+                      raise ValueError('Unexpected archive root')
+                  if not (member.isfile() or member.isdir()) or '..' in member.name.split('/'):
+                      raise ValueError('Unexpected archive entry')
+                  archive.extract(member, filter='data')
+          PY
+          plist=CirrusRetro.xcarchive/Products/Applications/CirrusRetro.app/Info.plist
+          test "$(plutil -extract CFBundleIdentifier raw "$plist")" = org.cirrusretro.player
+          test "$(plutil -extract CFBundleVersion raw "$plist")" = "$GITHUB_RUN_NUMBER"
+      - name: Recheck tag, PR head, reviews and CI after any approval wait
+        run: scripts/verify-testflight "$CANDIDATE" --tag "$TAG"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Check the App Store Connect audience
+        run: ruby scripts/check-testflight-audience.rb
+        env:
+          OWNER_TESTFLIGHT_EMAIL: ${{ vars.OWNER_TESTFLIGHT_EMAIL }}
+          ASC_ISSUER_ID: ${{ vars.ASC_ISSUER_ID }}
+          ASC_KEY_ID: ${{ vars.ASC_KEY_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+      - name: Sign and upload for internal testing only
         env:
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
           ASC_ISSUER_ID: ${{ vars.ASC_ISSUER_ID }}
@@ -31,4 +113,4 @@ jobs:
           DISTRIBUTION_P12_BASE64: ${{ secrets.DISTRIBUTION_P12_BASE64 }}
           DISTRIBUTION_P12_PASSWORD: ${{ secrets.DISTRIBUTION_P12_PASSWORD }}
           APP_STORE_PROFILE_BASE64: ${{ secrets.APP_STORE_PROFILE_BASE64 }}
-        run: scripts/upload-owner-testflight "$RUNNER_TEMP/CirrusRetro.xcarchive"
+        run: scripts/upload-owner-testflight "$RUNNER_TEMP/delivery/CirrusRetro.xcarchive"

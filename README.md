@@ -58,9 +58,9 @@ Playback continues when you switch apps or lock the phone. The Lock Screen, Cont
 - Interrupt playing audio with a call or Siri. Check recovery when iOS allows it. Repeat while paused and confirm it stays paused.
 - Connect Bluetooth headphones during playback and use their controls. Disconnect while playing and confirm playback pauses. Reconnect, press Play and check it resumes from the paused position.
 
-### Manual steps for a personal TestFlight build
+### Personal TestFlight delivery
 
-1. In GitHub Actions, open the **Owner TestFlight** run. Confirm the commit matches the reviewed revision and that only the owner will receive the build. Select **Review deployments → owner-testflight → Approve and deploy**. The workflow then signs and uploads the app.
+1. Complete the [owner-only automation setup](docs/milestone-2.md#deliver-the-authorized-owner-only-testflight-build). Pushing a new delivery tag requests verification, signing and internal-only upload. If the environment still requires owner review, open **Owner TestFlight → Review deployments → owner-testflight → Approve and deploy** after the verification job passes.
 2. After Apple processes the upload, open **App Store Connect → Apps → Cirrus Retro → TestFlight** and select the new version and build number. If it shows **Missing Compliance**, answer the export-compliance question and save. For **0.3.0 (3)**, the owner selected **None of the above**. Answer for the encryption used by the build being delivered.
 
 GitHub can show **Delivered** while the iPhone still shows the previous build. Once the build is available to the **Owner** internal group, open TestFlight on the iPhone and tap **Update**. Verify the version and build number before testing.
