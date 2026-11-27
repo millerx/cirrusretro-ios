@@ -44,7 +44,7 @@ See the [Milestone 1 audit, design and test record](docs/milestone-1.md), [roadm
 
 Milestone 2 is merged; the owner confirmed TestFlight installation and playback of two NSF tracks on iPhone. iPad-specific development is deferred.
 
-The SwiftUI player imports one NSF, SPC or VGM from Files, saves it for offline playback and plays it through AVAudioEngine. Existing installations retain their saved NSF. See the [supported formats, dependency audit and personal iPhone checks](docs/milestone-3a.md). The hosted macOS workflow builds for device and runs simulator tests without Apple signing credentials. See the [native build, playback design and personal installation guide](docs/milestone-2.md).
+In Library, tap **+** to import one or more NSF, SPC or supported VGM files from Files. The app saves local copies for offline use and detects duplicates by file contents. Existing installations automatically bring their previous saved recording into the library. Search by title, artist, copyright, filename or format. Open a recording to play a track or add it to the queue. In Playback, use **Play Next** to start the queue or skip ahead. Tracks also advance automatically when playback finishes. The queue lasts for the current app session. Swipe a recording in Library to remove the app’s copy and its queued tracks. See the [supported formats, dependency audit and personal iPhone checks](docs/milestone-3a.md). The hosted macOS workflow builds for device and runs simulator tests without Apple signing credentials. See the [native build, playback design and personal installation guide](docs/milestone-2.md).
 
 ### Manual steps for a personal TestFlight build
 

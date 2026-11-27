@@ -65,6 +65,131 @@ final class PlaybackTests: XCTestCase {
         }
     }
 
+    func testLibraryTrackIndicatorRequiresActivePlayback() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = MusicLibrary(applicationSupport: root)
+        let recording = try library.add(fixture(), fileName: "pulse.nsf").recording
+        let other = try library.add(fixture(ext: "spc"), fileName: "pulse.spc").recording
+        let track = recording.metadata.defaultTrack
+        var snapshot = PlayerSnapshot(recording: recording)
+        snapshot.playback.track = track
+
+        XCTAssertFalse(snapshot.isPlaying(recordingID: recording.id, track: track))
+        snapshot.playback.transport = .playing
+        XCTAssertTrue(snapshot.isPlaying(recordingID: recording.id, track: track))
+        XCTAssertFalse(snapshot.isPlaying(recordingID: recording.id, track: 0))
+        XCTAssertFalse(snapshot.isPlaying(recordingID: other.id, track: track))
+        snapshot.playback.transport = .paused
+        XCTAssertFalse(snapshot.isPlaying(recordingID: recording.id, track: track))
+        snapshot.playback.transport = .stopped
+        XCTAssertFalse(snapshot.isPlaying(recordingID: recording.id, track: track))
+    }
+
+    func testLibraryMigratesEachLegacyFormatAndSurvivesReopening() throws {
+        for ext in ["nsf", "spc", "vgm"] {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: root) }
+            let legacy = root.appendingPathComponent("current.nsf")
+            let data = try fixture(ext: ext)
+            try data.write(to: legacy)
+
+            let library = MusicLibrary(applicationSupport: root)
+            let entry = try XCTUnwrap(library.migrateLegacy())
+            XCTAssertEqual(entry.fileName, "current.\(ext)")
+            XCTAssertEqual(entry.metadata.format.rawValue, ext.uppercased())
+            XCTAssertTrue(entry.available)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: legacy.path))
+
+            let reopened = MusicLibrary(applicationSupport: root)
+            XCTAssertNil(try reopened.migrateLegacy())
+            XCTAssertEqual(try reopened.contents().recordings.map(\.id), [entry.id])
+            XCTAssertEqual(try MusicImport.read(entry.url), data)
+            XCTAssertEqual(try reopened.add(data, fileName: "renamed.music").recording.id, entry.id)
+            XCTAssertFalse(try reopened.add(data, fileName: "renamed.music").added)
+            try reopened.remove(entry)
+            XCTAssertTrue(try reopened.contents().recordings.isEmpty)
+            XCTAssertNil(try reopened.migrateLegacy())
+        }
+    }
+
+    func testLibraryKeepsValidImportsWhenOthersFailAndRepairsMissingMedia() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let library = MusicLibrary(applicationSupport: root)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let spc = try fixture(ext: "spc")
+        let malformed = Data(spc.prefix(32))
+        let legacy = root.appendingPathComponent("current.nsf")
+        _ = try library.contents()
+        try malformed.write(to: legacy)
+        XCTAssertThrowsError(try library.migrateLegacy())
+        XCTAssertEqual(try MusicImport.read(legacy), malformed)
+
+        let first = try library.add(fixture(), fileName: "two-tracks.nsf")
+        XCTAssertThrowsError(try library.add(malformed, fileName: "invalid.spc"))
+        let second = try library.add(spc, fileName: "recording.bin").recording
+        _ = try library.add(fixture(ext: "vgm"), fileName: "pulse.vgm")
+        XCTAssertTrue(first.added)
+        XCTAssertEqual(first.recording.metadata.trackCount, 2)
+        XCTAssertEqual(first.recording.metadata.defaultTrack, 1)
+        XCTAssertTrue(first.recording.matches("CIRRUS"))
+        XCTAssertTrue(first.recording.matches("two-tracks"))
+        XCTAssertTrue(second.matches("spc"))
+        XCTAssertFalse(second.matches("two-tracks"))
+        XCTAssertEqual(try library.contents().recordings.map(\.title), ["BRR pulse", "PSG pulse", "Pulse pair"])
+
+        try FileManager.default.removeItem(at: second.url)
+        let missing = try XCTUnwrap(library.contents().recordings.first { $0.id == second.id })
+        XCTAssertFalse(missing.available)
+        let repaired = try library.add(spc, fileName: "recovered.spc")
+        XCTAssertTrue(repaired.added)
+        XCTAssertTrue(repaired.recording.available)
+        XCTAssertEqual(repaired.recording.id, second.id)
+        try FileManager.default.removeItem(at: second.url)
+        try library.remove(second)
+        XCTAssertEqual(try library.contents().recordings.count, 2)
+    }
+
+    func testLibraryQueueSkipsMissingAndUnplayableTracksAndPurgesRemovedRecording() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let library = MusicLibrary(applicationSupport: root)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let missing = try library.add(fixture(ext: "spc"), fileName: "missing.spc").recording
+        let finite = try library.add(fixture(ext: "vgm"), fileName: "finite.vgm").recording
+        let unplayable = try library.add(fixture("warning"), fileName: "warning.nsf").recording
+        let next = try library.add(fixture(), fileName: "next.nsf").recording
+        try FileManager.default.removeItem(at: missing.url)
+
+        let session = LibraryPlayer()
+        let advanced = expectation(description: "finite track advanced to next playable item")
+        defer { session.playback.queue.sync { session.playback.shutdown() } }
+        try session.playback.queue.sync {
+            session.publish = { snapshot in
+                guard snapshot.recording?.id == next.id else { return }
+                XCTAssertEqual(snapshot.playback.track, 0)
+                XCTAssertEqual(snapshot.playback.transport, .playing)
+                XCTAssertTrue(snapshot.message?.contains("Skipped 2") == true)
+                XCTAssertEqual(snapshot.upcoming.map(\.track), [1])
+                advanced.fulfill()
+            }
+            session.enqueue(missing, track: 0)
+            session.enqueue(unplayable, track: 1)
+            session.enqueue(next, track: 0)
+            session.enqueue(next, track: 1)
+            try session.play(finite, track: 0)
+        }
+        wait(for: [advanced], timeout: 6)
+        session.playback.queue.sync {
+            session.playback.stop()
+            XCTAssertEqual(session.upcoming.count, 1)
+            session.remove(next)
+            XCTAssertTrue(session.upcoming.isEmpty)
+            XCTAssertNil(session.recording)
+            XCTAssertEqual(session.playback.state.transport, .stopped)
+        }
+    }
+
     func testFiniteVGMDrainsAndStops() throws {
         let player = Playback()
         let stopped = expectation(description: "finite VGM reached end")
