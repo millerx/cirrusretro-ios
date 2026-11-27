@@ -120,13 +120,18 @@ private struct RecordingView: View {
                                     showPlayback()
                                 } label: {
                                     Label("Track \(track + 1)", systemImage: isPlaying ? "speaker.wave.2" : "play")
+                                        .frame(minHeight: 44)
                                 }
                                 .buttonStyle(.borderless)
+                                .accessibilityLabel("Play track \(track + 1)")
+                                .accessibilityValue(isPlaying ? "Playing" : "")
                                 Spacer()
                                 Button {
                                     model.enqueue(item, track: track)
                                 } label: {
                                     Image(systemName: "text.badge.plus")
+                                        .frame(minWidth: 44, minHeight: 44)
+                                        .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.borderless)
                                 .accessibilityLabel("Add track \(track + 1) to queue")

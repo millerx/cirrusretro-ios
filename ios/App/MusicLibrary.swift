@@ -79,6 +79,18 @@ struct Recording: Identifiable {
         metadata.title.isEmpty ? fileName : metadata.title
     }
 
+    static func contentID(_ data: Data) -> String {
+        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    func readForPlayback() throws -> Data {
+        let data = try MusicImport.read(url)
+        guard Self.contentID(data) == id else {
+            throw PlayerFailure("Library file has changed. Import the original file again to restore playback.")
+        }
+        return data
+    }
+
     func matches(_ query: String) -> Bool {
         query.isEmpty || [title, metadata.artist, metadata.copyright, fileName, metadata.format.rawValue]
             .contains { $0.localizedStandardContains(query) }
@@ -149,17 +161,18 @@ struct MusicLibrary {
 
     private func install(_ data: Data, fileName: String?, moving source: URL?) throws
         -> (recording: Recording, added: Bool) {
-        let id = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        let id = Recording.contentID(data)
         let folder = root.appendingPathComponent(id, isDirectory: true)
         let media = folder.appendingPathComponent("music")
-        if let entry = try? readEntry(in: folder),
+        let previous = try? readEntry(in: folder)
+        if let entry = previous,
            (try? MusicImport.read(media)) == data {
             if let source { try files.removeItem(at: source) }
             return (recording(entry, in: folder), false)
         }
 
         let metadata = try Playback.inspect(data)
-        let entry = Entry(fileName: fileName ?? "current.\(metadata.format.rawValue.lowercased())",
+        let entry = Entry(fileName: previous?.fileName ?? fileName ?? "current.\(metadata.format.rawValue.lowercased())",
                           metadata: metadata)
         try files.createDirectory(at: folder, withIntermediateDirectories: true)
         try JSONEncoder().encode(entry).write(to: entryURL(in: folder), options: .atomic)

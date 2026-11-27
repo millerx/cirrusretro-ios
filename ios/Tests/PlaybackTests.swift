@@ -115,6 +115,41 @@ final class PlaybackTests: XCTestCase {
         }
     }
 
+    func testUpgradeReadsExisting032CatalogAndRepairsChangedAudioInPlace() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        // Frozen 0.3.2 on-disk layout, independent of the current catalog writer.
+        let id = "1a1416707d79a7623cbd1c00d982f0fd10ace36fbbd864e960f8eb45f64f5913"
+        let folder = root.appendingPathComponent("MusicLibrary").appendingPathComponent(id)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let metadata = Data(#"{"fileName":"original.nsf","metadata":{"format":"NSF","title":"Pulse pair","artist":"Cirrus Retro test","copyright":"Synthetic fixture","trackCount":2,"defaultTrack":1}}"#.utf8)
+        let catalogURL = folder.appendingPathComponent("metadata.json")
+        try metadata.write(to: catalogURL)
+        let original = try fixture()
+        try original.write(to: folder.appendingPathComponent("music"))
+        let library = MusicLibrary(applicationSupport: root)
+        let item = try XCTUnwrap(library.contents().recordings.first)
+        XCTAssertEqual(item.id, id)
+        XCTAssertEqual(item.metadata.defaultTrack, 1)
+        XCTAssertEqual(try item.readForPlayback(), original)
+        XCTAssertFalse(try library.add(original, fileName: "copy.nsf").added)
+        XCTAssertEqual(try Data(contentsOf: catalogURL), metadata)
+
+        // A different, playable recording must not be opened under this identity.
+        try fixture(ext: "spc").write(to: item.url)
+        let player = LibraryPlayer()
+        try player.playback.queue.sync {
+            defer { player.playback.shutdown() }
+            XCTAssertThrowsError(try player.prepare(item))
+            XCTAssertNil(player.recording)
+            let repaired = try library.add(original, fileName: "backup.nsf").recording
+            XCTAssertEqual(repaired.fileName, "original.nsf")
+            try player.prepare(repaired)
+            XCTAssertEqual(player.recording?.id, id)
+        }
+        XCTAssertEqual(try library.contents().recordings.count, 1)
+    }
+
     func testLibraryKeepsValidImportsWhenOthersFailAndRepairsMissingMedia() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let library = MusicLibrary(applicationSupport: root)

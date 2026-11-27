@@ -9,7 +9,7 @@ The primary objective is personal installation and ongoing use on the owner's iP
 | 3A · Additional music formats | 0.3.0 |
 | 3B · Music library | 0.3.1 |
 | 3C · Native music experience | 0.3.2 |
-| 4 · Beta and expansion | 0.4.0 |
+| 4 · Sustainable personal-use release | 0.4.0 |
 
 Each personal TestFlight delivery gets a fresh build number, including deliveries for the same app version. For each major milestone, deliver the reviewed and tested feature revision to the owner's iPhone before merge. The owner verifies that build on the device and explicitly approves merging it into `main`.
 
