@@ -12,6 +12,12 @@ The primary objective is personal installation and ongoing use on the owner's iP
 - Offline-first; import through Files and store locally. No backend or analytics by default. Plan background audio, interruptions, route changes and Now Playing controls.
 - Treat imported files as untrusted; validate bounds and sizes, handle malformed inputs and use sanitizers where available.
 
+## Dependency licensing policy
+
+- Prefer permissive or LGPL dependencies when technically comparable, but GPL dependencies are permitted for private owner-only use when they offer meaningful advantages in fidelity, compatibility, maintainability or development effort. Do not engineer around GPL merely to avoid it.
+- Audit exact versions, enabled components, license compatibility and notices; retain corresponding source and patches. Do not assume public source visibility grants reuse rights.
+- External binary sharing, including TestFlight invitations to friends, remains a separate gate: assess combined-work licensing, corresponding source, recipient rights and Apple delivery restrictions before sharing. Escalate material tradeoffs affecting optional sharing or the project's own license; do not choose a project license without owner approval. Private use alone is not a reason to reject GPL.
+
 ## Workflow
 - Read ROADMAP.md before implementation. Keep tasks focused on the current milestone. Use feature branches and pull requests; do not merge automatically.
 - Document build commands, dependency provenance, decisions, test results and limitations. Never claim an iOS build or device test passed unless actually executed.
