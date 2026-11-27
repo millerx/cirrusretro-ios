@@ -4,7 +4,8 @@
 #include <stdint.h>
 
 // Single producer, single consumer. Only reset by constructing a fresh queue.
-enum { CR_QUEUE_FRAMES = 2048, CR_BLOCK_FRAMES = 512 };
+// Two 4096-frame pulls of headroom for larger background render slices.
+enum { CR_QUEUE_FRAMES = 8192, CR_BLOCK_FRAMES = 512 };
 typedef struct {
     atomic_uint read, written;
     int16_t samples[CR_QUEUE_FRAMES][2];

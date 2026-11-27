@@ -350,9 +350,40 @@ final class PlaybackTests: XCTestCase {
             try player.play()
             XCTAssertEqual(player.remaining, paused)
             try player.select(0)
-            XCTAssertEqual(player.remaining, Int(CR_MUSIC_MAX_TRACK_FRAMES - CR_BLOCK_FRAMES))
+            XCTAssertEqual(player.remaining, Int(CR_MUSIC_MAX_TRACK_FRAMES - CR_QUEUE_FRAMES))
             player.stop()
             XCTAssertEqual(player.state.transport, .stopped)
+        }
+    }
+
+    func testLargeAudioPullsBetweenProducerWakes() throws {
+        let frames: AVAudioFrameCount = 4096
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 2))
+        for ext in ["nsf", "spc"] {
+            let output = CRAudioOutput()
+            let player = Playback { output }
+            try player.queue.sync {
+                defer { player.shutdown() }
+                try output.engine.enableManualRenderingMode(.offline, format: format, maximumFrameCount: frames)
+                let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames))
+                try player.load(fixture(ext: ext))
+                try player.play()
+                // Holding the serial queue makes the producer cadence deterministic.
+                // Alternate single and double pulls before allowing its next wake.
+                for wake in 0..<8 {
+                    for _ in 0..<(1 + wake % 2) {
+                        let before = output.freeFrames
+                        XCTAssertEqual(try output.engine.renderOffline(frames, to: buffer), .success)
+                        XCTAssertEqual(buffer.frameLength, frames)
+                        XCTAssertEqual(output.freeFrames - before, Int(frames), "Every frame must come from the ring")
+                    }
+                    let consumed = output.freeFrames
+                    let previous = player.remaining
+                    player.tick()
+                    XCTAssertEqual(previous - player.remaining, consumed)
+                    XCTAssertEqual(output.freeFrames, 0)
+                }
+            }
         }
     }
 

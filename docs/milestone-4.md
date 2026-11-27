@@ -31,4 +31,12 @@ On uploads after this change reaches main, the signer reports the profile's actu
 
 On x86-64 Linux with GCC 14.2, Release and pinned GME, all 14 baseline CTest cases passed. After CTest, run `python3 tests/playback_soak.py build` with about 606 MiB of temporary space. On the baseline core it rendered 158,760,000 stereo frames (one hour of synthetic NSF) in 1.16 s. Sampled process RSS after the first rendered minute was 2,044–2,044 KiB across 22 samples. The first, middle and final one-second windows had 443, 440 and 440 positive crossings per channel, with matching left/right samples. Existing tests also cover the deterministic short reference, SPC/VGM output and ring conversion/underrun silence.
 
-This accelerated measurement covers the Linux converter and emulator. Wall-clock audio scheduling, AVAudioEngine memory, device energy and the physical output route require the iPhone checks above. The audio path and timer settings retain the measured baseline. Use the PR for the final hosted simulator, device archive and physical results.
+This accelerated measurement covers the Linux converter and emulator. Wall-clock audio scheduling, AVAudioEngine memory, device energy and the physical output route require the iPhone checks above. Use the PR for the final hosted simulator, device archive and physical results.
+
+## Screen-off tone regression
+
+The owner heard Pulse Pair and BRR pulse break up with the screen off and recover as soon as the Lock Screen lit up. In a Linux ring test with 32 requests of 4,096 frames and one producer wake per request, the build 7 refill policy supplied 16,384 of 131,072 frames. The callback zero-filled the rest. This models a delayed producer and large render slices. The iPhone's actual slice size and wake interval were not measured.
+
+The producer now primes 8,192 stereo frames (32 KiB, about 186 ms) and replenishes the space available at the start of each wake in blocks of at most 512 frames. The callback still reads only committed samples. Stop discards the buffer and pause retains it. The simulator regression uses both reported fixtures and pulls one or two 4,096-frame slices between refills.
+
+On the replacement build, play each tone using the same output route as before. Lock with the side button for at least 30 seconds, wake the screen without unlocking, and repeat twice. Listen for a continuous pitch throughout. Record the build, iPhone model, iOS and output route if it still breaks up.

@@ -41,6 +41,7 @@ final class Playback {
     }
     private var handle: OpaquePointer?
     private var output: CRAudioOutput?
+    private let makeOutput: () -> CRAudioOutput
     private(set) var hasPlayedSelection = false
     private var playedThroughExternalOutput = false
     private var sessionActive = false
@@ -51,6 +52,10 @@ final class Playback {
     private var frameLimit = 0
     private(set) var remaining = 0
     var notify: ((PlaybackState) -> Void)?
+
+    init(makeOutput: @escaping () -> CRAudioOutput = { CRAudioOutput() }) {
+        self.makeOutput = makeOutput
+    }
 
     private static func open(_ data: Data) throws -> OpaquePointer {
         var candidate: OpaquePointer?
@@ -197,11 +202,17 @@ final class Playback {
     }
 
     private func produce(into output: CRAudioOutput) throws {
-        let frames = min(Int(CR_BLOCK_FRAMES), remaining)
-        guard frames > 0, output.freeFrames >= frames else { return }
-        try check(cr_music_render(handle, &pcm, frames))
-        pcm.withUnsafeBufferPointer { output.write($0.baseAddress!, frames: UInt32(frames)) }
-        remaining -= frames
+        // Timer deliveries can coalesce while the display sleeps. Replace the
+        // consumed audio in one wake. Snapshot once so a simultaneous consumer
+        // cannot extend this turn beyond one ring on the serial playback queue.
+        var budget = min(Int(output.freeFrames), remaining)
+        while budget > 0 {
+            let frames = min(Int(CR_BLOCK_FRAMES), budget)
+            try check(cr_music_render(handle, &pcm, frames))
+            pcm.withUnsafeBufferPointer { output.write($0.baseAddress!, frames: UInt32(frames)) }
+            remaining -= frames
+            budget -= frames
+        }
     }
 
     func play() throws {
@@ -216,7 +227,7 @@ final class Playback {
             } else {
                 try check(cr_music_select(handle, UInt32(state.track)))
                 remaining = frameLimit
-                audio = CRAudioOutput()
+                audio = makeOutput()
                 output = audio
                 try produce(into: audio)
             }
@@ -239,7 +250,7 @@ final class Playback {
         }
     }
 
-    private func tick() {
+    func tick() {
         guard transportState.transport == .playing, let output else { return }
         do {
             if !output.engine.isRunning {
