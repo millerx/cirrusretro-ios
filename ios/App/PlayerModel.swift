@@ -7,11 +7,21 @@ struct QueuedTrack: Identifiable {
     let track: Int
 }
 
+private struct QueueSkip: LocalizedError {
+    let errorDescription: String?
+    let advanced: Bool
+}
+
 struct PlayerSnapshot {
     var playback = PlaybackState()
     var recording: Recording?
     var upcoming: [QueuedTrack] = []
     var message: String?
+    var hasPrevious = false
+    var resumePending = false
+
+    var canAdvance: Bool { !upcoming.isEmpty || playback.track + 1 < playback.count }
+    var canGoBack: Bool { hasPrevious || playback.track > 0 }
 
     func isPlaying(recordingID: Recording.ID, track: Int) -> Bool {
         playback.transport == .playing && recording?.id == recordingID && playback.track == track
@@ -24,6 +34,12 @@ final class LibraryPlayer {
     let playback = Playback()
     private(set) var recording: Recording?
     private(set) var upcoming: [QueuedTrack] = []
+    private var history: [QueuedTrack] = []
+    var snapshot: PlayerSnapshot {
+        PlayerSnapshot(playback: playback.state, recording: recording, upcoming: upcoming,
+                       hasPrevious: !history.isEmpty, resumePending: playback.resumeAfterInterruption)
+    }
+
     var publish: ((PlayerSnapshot) -> Void)?
 
     init() {
@@ -35,25 +51,43 @@ final class LibraryPlayer {
         }
     }
 
-    func perform(_ action: (LibraryPlayer) throws -> Void) {
+    @discardableResult
+    func perform(_ action: (LibraryPlayer) throws -> Void) -> Bool {
         var message: String?
+        var success = true
         do {
             try action(self)
+        } catch let warning as QueueSkip {
+            message = warning.errorDescription
+            success = warning.advanced
         } catch {
             message = error.localizedDescription
+            success = false
         }
-        publish?(PlayerSnapshot(playback: playback.state, recording: recording,
-                                upcoming: upcoming, message: message))
+        var result = snapshot
+        result.message = message
+        publish?(result)
+        return success
     }
 
-    func prepare(_ item: Recording, track: Int? = nil) throws {
+    func prepare(_ item: Recording, track: Int? = nil, continuingSession: Bool = false) throws {
         let data = try MusicImport.read(item.url)
-        try playback.load(data, track: track)
+        try playback.load(data, track: track, continuingSession: continuingSession)
         recording = item
     }
 
     func play(_ item: Recording, track: Int) throws {
-        try prepare(item, track: track)
+        let previous = playback.hasPlayedSelection ? currentTrack : nil
+        try start(item, track: track)
+        if let previous { history.append(previous) }
+    }
+
+    private var currentTrack: QueuedTrack? {
+        recording.map { QueuedTrack(recording: $0, track: playback.state.track) }
+    }
+
+    private func start(_ item: Recording, track: Int) throws {
+        try prepare(item, track: track, continuingSession: true)
         try playback.play()
     }
 
@@ -66,6 +100,7 @@ final class LibraryPlayer {
     }
 
     func remove(_ item: Recording) {
+        history.removeAll { $0.recording.id == item.id }
         upcoming.removeAll { $0.recording.id == item.id }
         if recording?.id == item.id {
             playback.shutdown()
@@ -74,24 +109,30 @@ final class LibraryPlayer {
     }
 
     func next() throws {
+        let previous = playback.hasPlayedSelection ? currentTrack : nil
+        var advanced = false
         var firstFailure: String?
         var skipped = 0
         while !upcoming.isEmpty {
             let item = upcoming.removeFirst()
-            guard let error = try startQueuedTrack(item) else { break }
+            guard let error = try startQueuedTrack(item) else {
+                advanced = true
+                if let previous { history.append(previous) }
+                break
+            }
             skipped += 1
             if firstFailure == nil {
                 firstFailure = "\(item.recording.title) — \(error.localizedDescription)"
             }
         }
         if let firstFailure {
-            throw PlayerFailure("Skipped \(skipped) queued item(s). \(firstFailure)")
+            throw QueueSkip(errorDescription: "Skipped \(skipped) queued item(s). \(firstFailure)", advanced: advanced)
         }
     }
 
     private func startQueuedTrack(_ item: QueuedTrack) throws -> Error? {
         do {
-            try prepare(item.recording, track: item.track)
+            try prepare(item.recording, track: item.track, continuingSession: true)
         } catch {
             return error
         }
@@ -102,6 +143,27 @@ final class LibraryPlayer {
         }
         // Audio session or engine errors propagate so the selected track can be retried.
         return nil
+    }
+
+    func advance() throws {
+        if !upcoming.isEmpty {
+            try next()
+        } else if let recording, playback.state.track + 1 < playback.state.count {
+            try play(recording, track: playback.state.track + 1)
+        }
+    }
+
+    func previous() throws {
+        guard let current = currentTrack else { return }
+        if let last = history.last {
+            try start(last.recording, track: last.track)
+            history.removeLast()
+        } else if current.track > 0 {
+            try start(current.recording, track: current.track - 1)
+        } else {
+            return
+        }
+        upcoming.insert(current, at: 0)
     }
 }
 
@@ -114,15 +176,22 @@ final class PlayerModel: ObservableObject {
     @Published var libraryMessage: String?
 
     private let session = LibraryPlayer()
+    private let media: SystemMedia
     private let library: MusicLibrary
     private let libraryQueue = DispatchQueue(label: "CirrusRetro.library", qos: .userInitiated)
 
     init(applicationSupport: URL = FileManager.default.urls(for: .applicationSupportDirectory,
                                                              in: .userDomainMask)[0]) {
         library = MusicLibrary(applicationSupport: applicationSupport)
+        media = SystemMedia()
         session.publish = { [weak self] snapshot in
-            DispatchQueue.main.async { self?.player = snapshot }
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.player = snapshot
+                self.media.update(snapshot)
+            }
         }
+        media.connect(to: session)
         updateLibrary { library in
             do {
                 let legacy = try library.migrateLegacy()
