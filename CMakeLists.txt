@@ -8,9 +8,11 @@ include(CTest)
 include(FetchContent)
 
 # Keep the audited engine configuration independent of GME's broad defaults.
-foreach(format AY GBS GYM HES KSS NSFE SAP SPC VGM)
+foreach(format AY GBS GYM HES KSS NSFE SAP VGM)
   set(USE_GME_${format} OFF CACHE BOOL "" FORCE)
 endforeach()
+set(USE_GME_SPC ON CACHE BOOL "" FORCE)
+set(GME_SPC_ISOLATED_ECHO_BUFFER OFF CACHE BOOL "" FORCE)
 set(USE_GME_NSF ON CACHE BOOL "" FORCE)
 foreach(option GME_ZLIB GME_BUILD_TESTING GME_BUILD_EXAMPLES GME_BUILD_FRAMEWORK)
   set(${option} OFF CACHE BOOL "" FORCE)
@@ -46,6 +48,13 @@ target_link_libraries(nsf-to-wav PRIVATE cirrus_nsf)
 
 if(BUILD_TESTING)
   find_package(Python3 3.8 REQUIRED COMPONENTS Interpreter)
+  add_test(NAME format-fixtures COMMAND Python3::Interpreter
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/format_fixtures.py ${CMAKE_CURRENT_BINARY_DIR})
+  set_tests_properties(format-fixtures PROPERTIES FIXTURES_SETUP music_files)
+  add_executable(test-formats tests/formats.c)
+  target_link_libraries(test-formats PRIVATE cirrus_nsf)
+  add_test(NAME spc COMMAND test-formats ${CMAKE_CURRENT_BINARY_DIR}/pulse.spc)
+  set_tests_properties(spc PROPERTIES FIXTURES_REQUIRED music_files TIMEOUT 10)
   add_executable(test-api tests/api.c)
   target_link_libraries(test-api PRIVATE cirrus_nsf)
   add_test(NAME fixture COMMAND Python3::Interpreter
