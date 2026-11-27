@@ -34,7 +34,7 @@ security list-keychains -d user -s "$keychain" "$HOME/Library/Keychains/login.ke
 security cms -D -i "$temp/app.mobileprovision" -o "$temp/profile.plist"
 
 # App Store profiles contain a single signing certificate. Pin its SHA-1
-# fingerprint (Xcode's identity selector) and UUID in the export options.
+# fingerprint and select the installed profile by Apple's exact profile name.
 uuid=$(python3 - "$temp/profile.plist" "$temp/ExportOptions.plist" <<'PY'
 import hashlib
 import os
@@ -55,10 +55,16 @@ if (team not in profile['TeamIdentifier']
         or ent.get('get-task-allow') or not ent.get('beta-reports-active')
         or len(profile['DeveloperCertificates']) != 1):
     sys.exit('Expected an unexpired App Store Connect profile for this team and app')
-profile_id = str(uuid.UUID(profile['UUID'])).upper()
+# Preserve the UUID spelling from the signed profile for its installed filename.
+profile_id = profile['UUID']
+if str(uuid.UUID(profile_id)) != profile_id.lower():
+    sys.exit('Expected a canonical provisioning profile UUID')
+profile_name = profile['Name']
+if not isinstance(profile_name, str) or not profile_name.strip():
+    sys.exit('Expected a named App Store Connect provisioning profile')
 fingerprint = hashlib.sha1(profile['DeveloperCertificates'][0]).hexdigest().upper()
 options = dict(method='app-store-connect', destination='upload', signingStyle='manual',
-               teamID=team, signingCertificate=fingerprint, provisioningProfiles={bundle: profile_id},
+               teamID=team, signingCertificate=fingerprint, provisioningProfiles={bundle: profile_name},
                testFlightInternalTestingOnly=True, manageAppVersionAndBuildNumber=False)
 with open(sys.argv[2], 'wb') as dest:
     plistlib.dump(options, dest)
