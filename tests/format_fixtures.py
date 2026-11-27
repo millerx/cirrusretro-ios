@@ -58,7 +58,21 @@ def dac():
                bytes([0x85]*16) + b"\x66", loop=len(bank + enable), fm=True)
 
 
+def fm_note():
+    # YM2612 channel 0, algorithm 7 (four carriers), both output channels.
+    # Key on operator 1 alone, with a fast attack and a steady envelope.
+    registers = [(0xb0, 7), (0xb4, 0xc0), (0x30, 1), (0x40, 0),
+                 (0x50, 31), (0x60, 0), (0x70, 0), (0x80, 15),
+                 (0xa4, 0x24), (0xa0, 0xd2), (0x28, 0x10)]
+    commands = bytearray()
+    for address, value in registers:
+        commands.extend((0x52, address, value))
+    commands.extend(bytes.fromhex("61 44 AC 66"))
+    return vgm(commands, fm=True)
+
+
 if __name__ == "__main__":
     (Path(sys.argv[1]) / "pulse.spc").write_bytes(spc())
     (Path(sys.argv[1]) / "pulse.vgm").write_bytes(psg())
     (Path(sys.argv[1]) / "dac.vgm").write_bytes(dac())
+    (Path(sys.argv[1]) / "fm.vgm").write_bytes(fm_note())

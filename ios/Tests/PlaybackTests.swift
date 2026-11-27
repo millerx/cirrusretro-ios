@@ -140,24 +140,29 @@ final class PlaybackTests: XCTestCase {
     }
 
     func testEmulatorThroughSourceNode() throws {
-        let data = try fixture()
-        var nsf: OpaquePointer?
-        defer { cr_music_close(nsf) }
-        let error = data.withUnsafeBytes { cr_music_open($0.bindMemory(to: UInt8.self).baseAddress, $0.count, &nsf) }
-        XCTAssertNil(error)
         let output = CRAudioOutput()
         let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 2))
         try output.engine.enableManualRenderingMode(.offline, format: format, maximumFrameCount: 512)
         try output.engine.start()
         defer { output.engine.stop() }
         let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 512))
-        for track in 0..<2 {
-            XCTAssertNil(cr_music_select(nsf, UInt32(track)))
+        let tones: [(String, UInt32, Double)] = [
+            ("nsf", 0, 440), ("nsf", 1, 881), ("spc", 0, 500), ("vgm", 0, 499)
+        ]
+        for (ext, track, pitch) in tones {
+            let data = try fixture(ext: ext)
+            var music: OpaquePointer?
+            let error = data.withUnsafeBytes {
+                cr_music_open($0.bindMemory(to: UInt8.self).baseAddress, $0.count, &music)
+            }
+            XCTAssertNil(error)
+            defer { cr_music_close(music) }
+            XCTAssertNil(cr_music_select(music, track))
             var crossings = 0
             var previous: Float = 0
             var samples = [Int16](repeating: 0, count: 1024)
             for _ in 0..<86 {
-                XCTAssertNil(cr_music_render(nsf, &samples, 512))
+                XCTAssertNil(cr_music_render(music, &samples, 512))
                 output.write(samples, frames: 512)
                 XCTAssertEqual(try output.engine.renderOffline(512, to: buffer), .success)
                 XCTAssertEqual(buffer.frameLength, 512)
@@ -167,7 +172,7 @@ final class PlaybackTests: XCTestCase {
                     previous = left[index]
                 }
             }
-            XCTAssertEqual(Double(crossings), track == 0 ? 440 : 881, accuracy: 15)
+            XCTAssertEqual(Double(crossings), pitch, accuracy: 15)
         }
         XCTAssertEqual(try output.engine.renderOffline(512, to: buffer), .success)
         let planes = try XCTUnwrap(buffer.floatChannelData)

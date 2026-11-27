@@ -6,7 +6,7 @@ static uint32_t le32(const uint8_t *p)
     return p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
 }
 
-/* Scan each byte at most once. The engine interprets trusted command boundaries
+/* Scan the intro once and the loop at most twice. The engine interprets trusted command boundaries
    and follows one backward edge at END. Validate both cursor and work bounds
    across that edge before giving it any input. */
 static const char *scan(const uint8_t *b, size_t pos, size_t end, size_t loop,
@@ -15,11 +15,12 @@ static const char *scan(const uint8_t *b, size_t pos, size_t end, size_t loop,
     uint64_t frames = 0, loop_frame = 0;
     size_t loop_commands = 0, bank_size = 0, pcm = 0;
     unsigned credit = 1024;
-    int in_loop = 0, have_seek = 0;
+    int in_loop = 0, replay = 0, have_seek = 0;
     while (pos < end) {
         if (pos == loop) {
             in_loop = 1;
             loop_frame = frames;
+            loop_commands = 0;
             have_seek = 0; /* every loop must establish its own PCM cursor */
         }
         if (in_loop)
@@ -34,6 +35,15 @@ static const char *scan(const uint8_t *b, size_t pos, size_t end, size_t loop,
             if (loop && (!in_loop || loop_frame == frames ||
                          loop_commands > (frames - loop_frame) * 8))
                 return "invalid VGM loop target or timing";
+            if (loop && !replay) {
+                // A wait can fill the bucket and discard surplus credit. Check
+                // the suffix-to-prefix burst with the actual credit at END.
+                // With nonnegative net credit per lap, subsequent laps start
+                // with at least this second lap's credit or reach a fixed point.
+                replay = 1;
+                pos = loop;
+                continue;
+            }
             if (!frames)
                 return "VGM contains no timed audio";
             if (!loop && frames < CR_MUSIC_MAX_TRACK_FRAMES)
@@ -98,7 +108,7 @@ const char *cr_validate_vgm(const uint8_t *b, size_t size, cr_music_info *info)
     // Restrict clocks to the range of single-chip Sega consoles; flag bits
     // for dual/alternate chips are outside that range as well.
     if ((psg && (psg < 3000000 || psg > 4100000)) ||
-        (fm && (fm < 7000000 || fm > 8100000)) ||
+        (fm && (version < 0x110 || fm < 7000000 || fm > 8100000)) ||
         le32(b + 0x10) || le32(b + 0x30) || b[0x2a] > 16 || b[0x2b])
         return "unsupported VGM chip or clock";
     size_t start = 0x40;

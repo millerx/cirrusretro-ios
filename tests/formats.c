@@ -32,9 +32,10 @@ int main(int argc, char **argv)
     CHECK(info.track_count == 1 && info.default_track == 0);
     int spc = !strcmp(argv[2], "spc");
     int dac = !strcmp(argv[2], "dac");
+    int fm = !strcmp(argv[2], "fm");
     CHECK(info.format == (spc ? CR_FORMAT_SPC : CR_FORMAT_VGM));
-    CHECK(!strcmp(info.title, spc ? "BRR pulse" : dac ? "" : "PSG pulse"));
-    CHECK(!strcmp(info.artist, dac ? "" : "Cirrus test"));
+    CHECK(!strcmp(info.title, spc ? "BRR pulse" : (dac || fm) ? "" : "PSG pulse"));
+    CHECK(!strcmp(info.artist, (dac || fm) ? "" : "Cirrus test"));
     CHECK(info.frame_limit == (spc || dac ? CR_MUSIC_MAX_TRACK_FRAMES : 44100));
     int16_t first[8192], replay[8192];
     CHECK(cr_music_render(music, first, 4096));

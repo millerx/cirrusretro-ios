@@ -22,6 +22,7 @@ def inputs():
     yield b"\x1f\x8b" + bytes(80)  # gzip/VGZ
     tone = psg()
     yield tone[:0x40]
+    yield field(field(tone, 8, 0x101), 0x10, 7670454)  # legacy shared FM clock
     for offset in (4, 0x10, 0x14, 0x1c, 0x2c, 0x34):
         yield field(tone, offset, 0xffffffff)
     yield field(tone, 0x28, 0x00ff0009)  # invalid shift-register width
@@ -32,6 +33,8 @@ def inputs():
     yield vgm(bytes.fromhex("62 50 90 66"), loop=1)  # zero-time loop
     yield vgm(bytes([0x70]) + bytes([0x50, 0x90])*8 + bytes([0x66]), loop=0)
     yield vgm(bytes([0x50, 0x90])*1025 + bytes([0x62, 0x66]))
+    burst = bytes([0x50, 0x90]) * 600
+    yield vgm(burst + b"\x62" + burst + b"\x66", loop=0)
     yield field(dac(), 0x1c, 0x40 + 7 + 16 + 3 + 5 - 0x1c)  # loop bypasses PCM seek
 
 
