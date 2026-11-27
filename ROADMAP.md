@@ -38,13 +38,15 @@ Owner reports successful TestFlight installation and playback of two tracks from
 
 ## 3. Music player MVP
 
-### 3A. Additional music formats (current)
+### 3A. Additional music formats (complete)
 - Add SPC first, then VGM, using the existing GME engine where licensing and feasibility permit. Audit enabled components separately; prefer permissive or LGPL components when comparable, but permit GPL components for private use when technically advantageous, subject to AGENTS.md and separate external-sharing review.
 - Generalize the portable interface and format detection as needed while preserving NSF compatibility, bounded rendering, ownership and error recovery.
 - Extend iPhone Files import and playback to supported formats. Use lawful fixtures, portable regression tests, hosted iPhone builds and simulator tests.
 - Acceptance: independent two-pass review, green CI, owner TestFlight playback of SPC and VGM on iPhone with NSF regression smoke test.
 
-### 3B. Music library
+Milestone 3A merged via PR #4; owner reports completion. Independent review and hosted CI passed. App version 0.3.0.
+
+### 3B. Music library (current)
 - Persistent offline collection, multiple-file import, metadata, browsing and playback queue; iPhone layouts only.
 
 ### 3C. Native music experience
@@ -56,6 +58,5 @@ Owner reports successful TestFlight installation and playback of two tracks from
 - Review licensing, attribution and naming before any external binary sharing; public App Store release is not planned.
 - Consider additional formats, playlists, channel controls and visualizations after MVP stability.
 
-## Maintenance backlog
-- Milestone 3A moves the unsigned archive, iPhone simulator tests and owner upload to the standard ARM64 `xcode-27` runner, with an archive check for iOS 16.0. Confirm the next personal upload clears the warning.
-- Apple delivery warning ITMS-90725 for 0.2 build 2: iOS 27 SDK / Xcode 27 or later required for App Store Connect uploads starting April 2027, per owner-provided Apple email. Follow up by February 2027 if the next upload still warns.
+## Maintenance and deferred work
+See [BACKLOG.md](BACKLOG.md) for maintenance deadlines, deferred work and follow-up verification.
