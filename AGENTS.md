@@ -2,10 +2,10 @@
 
 ## Product and distribution objectives
 
-The primary objective is personal installation and ongoing use on the owner's iPhone and iPad. Limited sharing with a friend through TestFlight is optional. Public App Store release and monetization are out of scope. Prefer a sustainable remote signing and installation workflow; account for provisioning and beta expiration. Public source visibility does not waive dependency licenses; review obligations for any binary sharing, including TestFlight.
+The primary objective is personal installation and ongoing use on the owner's iPhone. Limited sharing with a friend through TestFlight is optional. Public App Store release and monetization are out of scope. Prefer a sustainable remote signing and installation workflow; account for provisioning and beta expiration. Public source visibility does not waive dependency licenses; review obligations for any binary sharing, including TestFlight.
 
 ## Scope and architecture
-- Target native iPhone and iPad only. Use SwiftUI for the application, portable C/C++ for emulation, and a narrow C-compatible API with opaque handles, explicit ownership and documented error handling.
+- Target native iPhone only for current development; iPad-specific work and testing are deferred. Preserve portable architecture. Use SwiftUI for the application, portable C/C++ for emulation, and a narrow C-compatible API with opaque handles, explicit ownership and documented error handling.
 - Prefer proven upstream emulator implementations over rewriting sound chips. Audit actual dependencies and licenses before incorporating code; pin upstream revisions and retain notices.
 - Keep the core independent of Apple frameworks, browser APIs and Emscripten. Use reproducible CMake or equivalent portable builds and Linux tests.
 - Plan AVAudioEngine integration with bounded buffering; avoid allocations, blocking, locks and file I/O on the real-time audio callback. Define sample format, rate, channels, lifecycle and thread ownership.
